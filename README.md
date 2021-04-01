@@ -1,3 +1,4 @@
+
 ## MultiplayerDynamicBonesMod
 
 Makes dynamic bones multiplayer, allowing other players to interact with yours and vice versa, in addition to optimizing dynamic bones and more.
@@ -6,6 +7,17 @@ How to install? Follow the Automatic Installation instructions at https://melonw
 Then drop the mod dll in the Mods folder.  
 **This mod requires [UIExpansionKit](https://github.com/knah/VRCMods)**
 
+### MoarBones
+Because the world always needs more Dynamic Bones! 
+This can be toggled in **Mod Settings**
+![image](https://user-images.githubusercontent.com/81715017/113239666-d0159580-9270-11eb-8010-0eddad1adeaa.png)"I hear you like bones~" Toggles this feature on/off  
+"Performance Limit" Limits this to the first 10 avatars loaded since last toggle/world change  
+"Don't effect local avatar" Stops moarbones from effecting you. Your own movements are networked through IK, so this is enabled by default. 
+
+Or from **MDB Settings** on the Quick Menu
+![image](https://user-images.githubusercontent.com/81715017/113239574-9cd30680-9270-11eb-907f-9617b0535dfb.png)
+  
+   
 Hotkeys | Description
  ---- | -----
 F1 | Enable/disable the mod. You can also use the button in the quick menu if you're in VR or don't want to use the keyboard.
