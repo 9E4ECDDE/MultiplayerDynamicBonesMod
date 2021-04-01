@@ -7,7 +7,7 @@ How to install? Follow the Automatic Installation instructions at https://melonw
 Then drop the mod dll in the Mods folder.  
 **This mod requires [UIExpansionKit](https://github.com/knah/VRCMods)**
 
-### MoarBones
+## MoarBones
 Because the world always needs more Dynamic Bones! 
 This can be toggled in **Mod Settings**
 ![image](https://user-images.githubusercontent.com/81715017/113239666-d0159580-9270-11eb-8010-0eddad1adeaa.png)"I hear you like bones~" Toggles this feature on/off  
