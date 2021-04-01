@@ -31,7 +31,7 @@ namespace DBMod
 {
     internal class NDB : MelonMod
     {
-        public const string VERSION_STR = "1040.2";
+        public const string VERSION_STR = "1040.3";
 
         private static class NDBConfig
         {
@@ -447,7 +447,7 @@ namespace DBMod
                                   {"OnlyDynamicBonesOnBreasts", "Only the breast bones will be multiplayer'd\n"},//End Row 3
                                   {"EnableJustIfVisible", "Enable dynamic bones only if they are in view"},
                                   {"DistanceDisable", "Disable bones if beyond a distance"},
-                                  {"", ""}};//End Row 4
+                                  {"MoarBones", "~MoarBones~"}};//End Row 4
 
             for (int i = 0; i < settings.GetLength(0); i++)
             {
@@ -1624,7 +1624,7 @@ namespace DBMod
                 {
                     string hashBone = hashAvatar + ":db:" + bone.m_Root.name;
                     if (NDBConfig.bonesToInclude.Contains(hashBone)) includeBone = true;
-                    if (!(NDB.bonesIncluded.Contains(hashBone))) NDB.bonesIncluded.Add(hashBone);
+                    if (!NDB.bonesIncluded.Contains(hashBone) && includeBone) NDB.bonesIncluded.Add(hashBone);
                 }
             }
             catch (Exception ex) { MelonLogger.Msg(ConsoleColor.Red, "Error in CheckIfBoneIncluded\n" + ex.ToString()); }
@@ -1641,7 +1641,7 @@ namespace DBMod
                 {
                     string hashBone = hashAvatar + ":dbc:" + dbc.gameObject.name;
                     if (NDBConfig.collidersToInclude.Contains(hashBone)) includeDBC = true;
-                    if (!(NDB.collidersIncluded.Contains(hashBone))) NDB.collidersIncluded.Add(hashBone);
+                    if (!NDB.collidersIncluded.Contains(hashBone) && includeDBC) NDB.collidersIncluded.Add(hashBone);
                 }
             }
             catch (Exception ex) { MelonLogger.Msg(ConsoleColor.Red, "Error in CheckIfColliderIncluded\n" + ex.ToString()); }
