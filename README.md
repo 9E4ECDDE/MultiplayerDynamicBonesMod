@@ -71,6 +71,11 @@ _This is on the Quick Menu when you select another Player or on the side of the 
 
 
 ## __Changelog:__
+* Build 1040.1-4
+	* Minor bug fixes for various VRC versions
+	* Added more description to MoarBones & MoarBones button is moar visible (Added to MDB Settings in Quick Menu)
+	* Fix 'Disable All Bones' not really working if Enable if Visible was enabled
+	* Fixed issue where all db and dbc were being added to the included list.
 * Build 1040
 	* Added an Include Specific option at the request of a mod user. 
 		 * DynamicBones and Colliders now can toggle between Excluded/Included/NA.   
