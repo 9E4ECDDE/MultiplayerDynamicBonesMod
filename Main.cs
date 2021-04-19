@@ -31,7 +31,7 @@ namespace DBMod
 {
     internal class NDB : MelonMod
     {
-        public const string VERSION_STR = "1040.3";
+        public const string VERSION_STR = "1040.4";
 
         private static class NDBConfig
         {
@@ -694,7 +694,7 @@ namespace DBMod
         private void MoarBoneCheck()
         {
             try
-            {
+            { //Change this next time to disable MoarBones if No is clicked - Add more explaination to what this does and how to disable.
                 MelonLogger.Msg(ConsoleColor.Green, $"It is 4/1 - Checking if user wants to enable this feature");
                 if (MessageBox(IntPtr.Zero, "There is a new feature for Multiplayer Dynamic Bones! Do you want to enable it? \nYou can disable it later in Mod Settings: Moarbones", "Multiplayer Dynamic Bones Mod", 0x04 | 0x40 | 0x1000) == 6)
                 {
@@ -752,7 +752,7 @@ namespace DBMod
             //MelonPreferences.CreateEntry<int>("NDB", "UserPanelButtonY", -1, "Y offset for the user panel button (Restart Req - Default:-1)");
             MelonPreferences.CreateEntry<int>("NDB", "QuickMenuButton", 1, "Quick Menu Button - 1:Settings Menu, 2:Just Toggle, 0:None (Restart Req)");
             MelonPreferences.CreateEntry<int>("NDB", "LogLevel", 0, "Console Logging Level: 0-Default, 1-Info, 2-Debug, 3-ExtraDebug(Very laggy)"); // 1-Just info, 2-Limited to once per avatar or behind a filter IF, 3-Spammy stuff in loops
-            MelonPreferences.CreateEntry<bool>("NDB", "MoarBones", false, "MoarBones: I hear you like bones~");
+            MelonPreferences.CreateEntry<bool>("NDB", "MoarBones", false, "MoarBones: I hear you like bones~ (Makes all bones Dynamic)");
             MelonPreferences.CreateEntry<bool>("NDB", "MoarBonesPref", true, "MoarBones: Performance Limit");
             MelonPreferences.CreateEntry<bool>("NDB", "MoarBonesNotLocal", true, "MoarBones: Don't effect local avatar"); 
             //Change to use this at one point
@@ -819,9 +819,9 @@ namespace DBMod
                 moarbonesCount = 0;
                 try
                 {// Reload All Avatar - Thanks loukylor - https://github.com/loukylor/VRC-Mods/blob/main/ReloadAvatars/ReloadAvatarsMod.cs
-                    VRCPlayer.field_Internal_Static_VRCPlayer_0.Method_Public_Void_Boolean_1(); //What does this do now? was Boolean_0 before
+                    VRCPlayer.field_Internal_Static_VRCPlayer_0.Method_Public_Void_Boolean_0(); //What does this do now? was Boolean_0 before Then Boolean_1, now back to 0
                 }
-                catch { } // Ignore
+                catch { MelonLogger.Msg(ConsoleColor.Red, "Failed to reload all avatars - You will have to rejoin the world - Check for a newer version of this mod or report this bug"); } // Ignore
             }
             NDBConfig.enabledByDefault = MelonPreferences.GetEntryValue<bool>("NDB", "EnabledByDefault");
             NDBConfig.disallowInsideColliders = MelonPreferences.GetEntryValue<bool>("NDB", "DisallowInsideColliders");
@@ -1194,7 +1194,7 @@ namespace DBMod
             try
             {
                 MelonLogger.Msg(ConsoleColor.Magenta, $"~~~~~~~~~~~~~~~Moarbones~~~~~~~~~~~~~~~");
-                MelonLogger.Msg(ConsoleColor.Magenta, $"THIS CAN BE DISABLED IN MOD SETTINGS - MOARBONES {(NDBConfig.moarBonesPrefLimit ? "\nPerformance Limit Enabled in Mod Settings, limiting to first 10 avatars loaded" : "\nPerformance Limit DISABLED in Mod Settings, applying MoarBones for every avatar")}");
+                MelonLogger.Msg(ConsoleColor.Magenta, $"This makes ALL bones dynamic and can be disabled in Mod Settings:\n'MoarBones: I hear you like bones~' {(NDBConfig.moarBonesPrefLimit ? "\nPerformance Limit Enabled in Mod Settings, limiting to first 10 avatars loaded" : "\nPerformance Limit DISABLED in Mod Settings, applying MoarBones for every avatar")}");
 
                 if (NDBConfig.moarBonesPrefLimit && moarbonesCount > 10) yield break;
                 if (NDBConfig.moarBonesNotLocal && avatar.transform.root.gameObject.name.Contains("[Local]")) yield break;
@@ -2098,7 +2098,7 @@ namespace DBMod
 
         private void EnableIfVisible()
         {
-            if (nextUpdateVisibility < Time.time)
+            if (nextUpdateVisibility < Time.time && !NDBConfig.disableAllBones)
             {
                 foreach (System.Tuple<Renderer, DynamicBone[]> go in avatarRenderers.Values)
                 {
