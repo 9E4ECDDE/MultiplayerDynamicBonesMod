@@ -1,23 +1,13 @@
 
+
 ## MultiplayerDynamicBonesMod
 
 Makes dynamic bones multiplayer, allowing other players to interact with yours and vice versa, in addition to optimizing dynamic bones and more.
 
 How to install? Follow the Automatic Installation instructions at https://melonwiki.xyz/#/README?id=installation-on-il2cpp-games
 Then drop the mod dll in the Mods folder.  
-**This mod requires [UIExpansionKit](https://github.com/knah/VRCMods)**
+**This mod requires [UIExpansionKit](https://github.com/knah/VRCMods)**   
 
-## MoarBones
-Because the world always needs more Dynamic Bones!    
-This can be toggled in **Mod Settings**     
-![image](https://user-images.githubusercontent.com/81715017/113239666-d0159580-9270-11eb-8010-0eddad1adeaa.png)     
-"I hear you like bones~" Toggles this feature on/off     
-"Performance Limit" Limits this to the first 10 avatars loaded since last toggle/world change     
-"Don't effect local avatar" Stops moarbones from effecting you. Your own movements are networked through IK, so this is enabled by default.     
-   
-Or from **MDB Settings** on the Quick Menu     
-![image](https://user-images.githubusercontent.com/81715017/113239574-9cd30680-9270-11eb-907f-9617b0535dfb.png)     
-  
    
 Hotkeys | Description
  ---- | -----
@@ -67,11 +57,20 @@ _This is on the Quick Menu when you select another Player or on the side of the 
 
 ### **Sub Menus**
 ![image](https://user-images.githubusercontent.com/68404726/112707256-01105780-8e78-11eb-9d89-dfc98d84392b.png)
-
+### MoarBones
+Because the world always needs more Dynamic Bones!    
+This can be toggled in **Mod Settings**     
+![image](https://user-images.githubusercontent.com/81715017/113239666-d0159580-9270-11eb-8010-0eddad1adeaa.png)     
+"I hear you like bones~" Toggles this feature on/off     
+"Performance Limit" Limits this to the first 10 avatars loaded since last toggle/world change     
+"Don't effect local avatar" Stops moarbones from effecting you. Your own movements are networked through IK, so this is enabled by default.     
+   
+Or from **MDB Settings** on the Quick Menu     
+![image](https://user-images.githubusercontent.com/81715017/113239574-9cd30680-9270-11eb-907f-9617b0535dfb.png)
 
 
 ## __Changelog:__
-* Build 1040.1-4
+* Build 1040.1-5
 	* Minor bug fixes for various VRC versions
 	* Added more description to MoarBones & MoarBones button is moar visible (Added to MDB Settings in Quick Menu)
 	* Fix 'Disable All Bones' not really working if Enable if Visible was enabled

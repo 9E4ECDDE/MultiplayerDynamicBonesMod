@@ -31,7 +31,7 @@ namespace DBMod
 {
     internal class NDB : MelonMod
     {
-        public const string VERSION_STR = "1040.4";
+        public const string VERSION_STR = "1040.5";
 
         private static class NDBConfig
         {
@@ -192,7 +192,7 @@ namespace DBMod
         //        }
         //        if (enabled)
         //        {
-        //            AddCollidersToAllPlayers(avatarsInScene[selectedPlayer.field_Internal_VRCPlayer_0.prop_String_0]);
+        //            AddCollidersToAllPlayers(avatarsInScene[selectedPlayer._vrcplayer.prop_String_0]);
         //        }
         //        //MelonPreferences.SetEntryValue<string>("NDB", "AvatarsToWhichNotApply", NDBConfig.avatarsToWhichNotApply.Aggregate("", (acc, s) => acc += (';' + s)));
         //        SaveListFiles();
@@ -512,7 +512,7 @@ namespace DBMod
         {
             if (selectedPlayer is null) return;
             NDB.specificButtonList.Clear(); //Clear list of buttons
-            DynamicBone[] boneList = avatarsInScene[selectedPlayer.field_Internal_VRCPlayer_0.prop_String_0].Item3;
+            DynamicBone[] boneList = avatarsInScene[selectedPlayer._vrcplayer.prop_String_0].Item3;
             ICustomShowableLayoutedMenu boneSpecificMenu = null;
             boneSpecificMenu = useBigMenu ? ExpansionKitApi.CreateCustomFullMenuPopup(LayoutDescription.WideSlimList) : ExpansionKitApi.CreateCustomQuickMenuPage(LayoutDescriptionCustom.QuickMenu1Column);
             //string playerName = selectedPlayer.field_Private_APIUser_0.displayName;
@@ -575,7 +575,7 @@ namespace DBMod
         {
             if (selectedPlayer is null) return;
             NDB.specificButtonList.Clear(); //Clear list of buttons
-            DynamicBoneCollider[] boneList = avatarsInScene[selectedPlayer.field_Internal_VRCPlayer_0.prop_String_0].Item4;
+            DynamicBoneCollider[] boneList = avatarsInScene[selectedPlayer._vrcplayer.prop_String_0].Item4;
             ICustomShowableLayoutedMenu colliderSpecificMenu = null;
             colliderSpecificMenu = useBigMenu ? ExpansionKitApi.CreateCustomFullMenuPopup(LayoutDescription.WideSlimList) : ExpansionKitApi.CreateCustomQuickMenuPage(LayoutDescriptionCustom.QuickMenu1Column);
             //string playerName = selectedPlayer.field_Private_APIUser_0.displayName;
@@ -1099,7 +1099,7 @@ namespace DBMod
                 return;
             }
 
-            if (!_Instance.avatarsInScene.ContainsKey(player.field_Internal_VRCPlayer_0.prop_String_0) && !_Instance.originalSettings.ContainsKey(player.field_Internal_VRCPlayer_0.prop_String_0))
+            if (!_Instance.avatarsInScene.ContainsKey(player._vrcplayer.prop_String_0) && !_Instance.originalSettings.ContainsKey(player._vrcplayer.prop_String_0))
             {
 
                 onPlayerLeftDelegate(@this, playerPtr);
@@ -1108,11 +1108,11 @@ namespace DBMod
 
             }
 
-            _Instance.RemoveBonesOfGameObjectInAllPlayers(_Instance.avatarsInScene[player.field_Internal_VRCPlayer_0.prop_String_0].Item4);
-            _Instance.DeleteOriginalColliders(player.field_Internal_VRCPlayer_0.prop_String_0);
-            _Instance.RemovePlayerFromDict(player.field_Internal_VRCPlayer_0.prop_String_0);
-            _Instance.RemoveDynamicBonesFromVisibilityList(player.field_Internal_VRCPlayer_0.prop_String_0);
-            MelonLogger.Msg(ConsoleColor.Blue, $"Player {player.field_Internal_VRCPlayer_0.prop_String_0} left the room so all his dynamic bones info was deleted");
+            _Instance.RemoveBonesOfGameObjectInAllPlayers(_Instance.avatarsInScene[player._vrcplayer.prop_String_0].Item4);
+            _Instance.DeleteOriginalColliders(player._vrcplayer.prop_String_0);
+            _Instance.RemovePlayerFromDict(player._vrcplayer.prop_String_0);
+            _Instance.RemoveDynamicBonesFromVisibilityList(player._vrcplayer.prop_String_0);
+            MelonLogger.Msg(ConsoleColor.Blue, $"Player {player._vrcplayer.prop_String_0} left the room so all his dynamic bones info was deleted");
             onPlayerLeftDelegate(@this, playerPtr);
             //Console.WriteLine("ONPLAYERLEFT SUCCESS");
         }
