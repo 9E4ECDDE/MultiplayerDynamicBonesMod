@@ -31,7 +31,7 @@ namespace DBMod
 {
     internal class NDB : MelonMod
     {
-        public const string VERSION_STR = "1040.5";
+        public const string VERSION_STR = "1040.6";
 
         private static class NDBConfig
         {
@@ -781,7 +781,7 @@ namespace DBMod
                 onAvatarInstantiatedDelegate = Marshal.GetDelegateForFunctionPointer<AvatarInstantiatedDelegate>(*(IntPtr*)funcToHook);
                 MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedDelegate != null) ? "Yes!" : "No: critical error!!")}");
 
-                funcToHook = (IntPtr)typeof(NetworkManager).GetField("NativeMethodInfoPtr_Method_Public_Void_Player_0", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+                funcToHook = (IntPtr)typeof(NetworkManager).GetField("NativeMethodInfoPtr_Method_Public_Void_Player_1", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
                 Hook(funcToHook, new System.Action<IntPtr, IntPtr>(OnPlayerLeft).Method.MethodHandle.GetFunctionPointer());
                 onPlayerLeftDelegate = Marshal.GetDelegateForFunctionPointer<PlayerLeftDelegate>(*(IntPtr*)funcToHook);
                 MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnPlayerLeft? {((onPlayerLeftDelegate != null) ? "Yes!" : "No: critical error!!")}");
@@ -1094,14 +1094,14 @@ namespace DBMod
 
             if (player.transform.root.gameObject.name.Contains("[Local]"))
             {
-                if (NDBConfig.logLevel >= 2) MelonLogger.Msg(ConsoleColor.Red, $"Not removing local player info");
+                if (NDBConfig.logLevel >= 2) MelonLogger.Msg(ConsoleColor.Red, $"OnPlayerLeft: Not removing local player info");
                 onPlayerLeftDelegate(@this, playerPtr);
                 return;
             }
 
             if (!_Instance.avatarsInScene.ContainsKey(player._vrcplayer.prop_String_0) && !_Instance.originalSettings.ContainsKey(player._vrcplayer.prop_String_0))
             {
-
+                if (NDBConfig.logLevel >= 2) MelonLogger.Msg(ConsoleColor.Red, $"OnPlayerLeft: Just passing to onPlayerLeftDelegate");
                 onPlayerLeftDelegate(@this, playerPtr);
                 //Console.WriteLine("ONPLAYERLEFT PAST-CALLBACK");
                 return;
