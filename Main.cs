@@ -31,7 +31,7 @@ namespace DBMod
 {
     internal class NDB : MelonMod
     {
-        public const string VERSION_STR = "1040.6";
+        public const string VERSION_STR = "1040.7";
 
         private static class NDBConfig
         {
@@ -764,7 +764,7 @@ namespace DBMod
             MelonPreferences.CreateEntry<string>("NDB", "AvatarsToWhichNotApply", "", null, true);
             MelonPreferences.CreateEntry<string>("NDB", "BonesToExclude", "", null, true);
             MelonPreferences.CreateEntry<string>("NDB", "CollidersToExclude", "", null, true);
-            MelonPreferences.CreateEntry<string>("NDB", "BonesToAlwaysExclude", "", null, true);
+            MelonPreferences.CreateEntry<string>("NDB", "BonesToAlwaysExclude", "Left Z_Wing_Bone_3;Left Z_Wing_Bone_2;Left Z_Wing_Bone_1;Right Z_Wing_Bone_3;Right Z_Wing_Bone_2;Right Z_Wing_Bone_1", null, true);
             MelonPreferences.CreateEntry<string>("NDB", "AvatarsToAdjustDBRadius", "", null, true);
             MelonPreferences.CreateEntry<string>("NDB", "AvatarsToAddColliders", "", null, true);
             MelonPreferences.CreateEntry<string>("NDB", "BonesToInclude", "", null, true);
@@ -1155,7 +1155,7 @@ namespace DBMod
                     string aviName = avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_ApiAvatar_0.name;
                     string aviID = avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_ApiAvatar_0.id;
                     string aviHash = aviName.Substring(0, Math.Min(aviName.Length, 20)) + ":" + String.Format("{0:X}", aviID.GetHashCode()).Substring(4);
-                    if (NDBConfig.logLevel >= 2) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar: {aviName}, ID: {aviID}");
+                    if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar: {aviName}, ID: {aviID}");
 
                     AddAutoCollidersToPlayer(avatar, aviHash);
 
@@ -1226,7 +1226,7 @@ namespace DBMod
                 dbList.Add(newBone);
                 avatar.transform.root.GetComponentInChildren<VRC.DynamicBoneController>().Update();
 
-                newBone.Method_Public_Void_PDM_1();//Start
+                newBone.Method_Public_Void_PDM_0();//Start - was Method_Public_Void_PDM_1
                 //For some reason needed twice now
                 newBone.m_Root = Hips;
                 newBone.m_Damping = 0.05f; newBone.m_Elasticity = 0.02f; newBone.m_Stiffness = 0.2f; newBone.m_Inert = 0.2f;
