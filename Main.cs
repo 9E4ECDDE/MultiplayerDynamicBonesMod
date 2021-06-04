@@ -1226,7 +1226,7 @@ namespace DBMod
                 dbList.Add(newBone);
                 avatar.transform.root.GetComponentInChildren<VRC.DynamicBoneController>().Update();
 
-                newBone.Method_Public_Void_PDM_0();//Start - was Method_Public_Void_PDM_1
+                newBone.Method_Public_Void_PDM_0();//Start - was Method_Public_Void_PDM_1, then Method_Public_Void_PDM_0
                 //For some reason needed twice now
                 newBone.m_Root = Hips;
                 newBone.m_Damping = 0.05f; newBone.m_Elasticity = 0.02f; newBone.m_Stiffness = 0.2f; newBone.m_Inert = 0.2f;
@@ -1237,8 +1237,8 @@ namespace DBMod
                 newBone.m_DistantDisable = false;
                 newBone.m_Colliders = new Il2CppSystem.Collections.Generic.List<DynamicBoneCollider>(); newBone.m_Exclusions = new Il2CppSystem.Collections.Generic.List<Transform>();
                 newBone.m_DampingDistrib = flat; newBone.m_ElasticityDistrib = flat; newBone.m_StiffnessDistrib = flat; newBone.m_InertDistrib = flat; newBone.m_RadiusDistrib = flat;
-                newBone.Method_Private_Void_5();//InitTransforms - Reset positions before adding new particles. If you don't do this the new particle will be offest from the bone
-                newBone.Method_Private_Void_4();//SetupParticles
+                newBone.Method_Private_Void_6();//InitTransforms - Reset positions before adding new particles. If you don't do this the new particle will be offest from the bone
+                newBone.Method_Private_Void_5();//SetupParticles
             }
             catch (System.Exception ex) { MelonLogger.Error(ex.ToString()); }
         }
@@ -1351,8 +1351,8 @@ namespace DBMod
             if (!enabled || db.m_Root == null)
                 return;
 
-            db.Method_Private_Void_5();//InitTransforms - Reset positions before adding new particles. If you don't do this the new particle will be offest from the bone
-            db.Method_Private_Void_4();//SetupParticles
+            db.Method_Private_Void_6();//InitTransforms - Reset positions before adding new particles. If you don't do this the new particle will be offest from the bone
+            db.Method_Private_Void_5();//SetupParticles
 
             Gizmos.color = Color.white;
             for (int i = 0; i < db.field_Private_List_1_ObjectNPrivateTrInSiVeSiQuVeSiVeSiUnique_0.Count; ++i) //m_Particles
@@ -1457,8 +1457,8 @@ namespace DBMod
 
         private static void ApplyBoneChanges(DynamicBone bone)
         { 
-            bone.Method_Private_Void_5();//InitTransforms - Reset positions before adding new particles. If you don't do this the new particle will be offest from the bone
-            bone.Method_Private_Void_4();//SetupParticles
+            bone.Method_Private_Void_6();//InitTransforms - Reset positions before adding new particles. If you don't do this the new particle will be offest from the bone
+            bone.Method_Private_Void_5();//SetupParticles
         }
 
         private static int GetChildDepth(Transform parent, int depth) 
