@@ -160,7 +160,6 @@ Or from **MDB Settings** on the Quick Menu
 		* __UIExpansionKit is now required__
 
 __Known bugs:__
-* UserPanelButtonX and UserPanelButtonY don't update till reload. But I like where the buttons are so minor issue.
 * If Mod is disabled and you save mod settings, the button on the menu will switch to 'Press to disable DBM' despite the mod being disabled. Toggle the button on and off will resync it's state.
 
 __Todo:__ 
