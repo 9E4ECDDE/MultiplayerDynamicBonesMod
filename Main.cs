@@ -32,7 +32,10 @@ namespace DBMod
 {
     internal class NDB : MelonMod
     {
-        public const string VERSION_STR = "1040.7";
+        public NDB()
+        { LoaderIntegrityCheck.CheckIntegrity(); }
+
+        public const string VERSION_STR = "1041";
 
         private static class NDBConfig
         {
@@ -111,13 +114,15 @@ namespace DBMod
         private bool enabled = true;
 
         private float nextUpdateVisibility = 0;
+        private float nextEditorUpdate = 0;
         private const float visiblityUpdateRate = 1f;
 
         private (MethodBase, MethodBase) reloadDynamicBoneParamInternalFuncs;
 
-        private static AvatarInstantiatedDelegate onAvatarInstantiatedDelegate;
+        //private static AvatarInstantiatedDelegate onAvatarInstantiatedDelegate;
         private static HarmonyInstance harmonyInstance;
         private static DynamicMethod onJoinedRoomPatch;
+        private static DynamicMethod onAvatarInstantiatedPatch;
 
         public static HashSet<string> bonesExcluded = new HashSet<string>();
         public static HashSet<string> collidersExcluded = new HashSet<string>();
@@ -137,74 +142,13 @@ namespace DBMod
 
         public static int moarbonesCount;
         public bool firstrun = true;
-        private static void Hook(IntPtr target, IntPtr detour)
-        {
-            Imports.Hook(target, detour);
-        }
-
-
-        //public override void VRChat_OnUiManagerInit()
+        //private static void Hook(IntPtr target, IntPtr detour)
         //{
-        //    if (NDBConfig.enableUserPanelButton) AddSelectiveButton();
-        //}
-
-        //private void AddSelectiveButton()
-        //{
-        //    GameObject buttonNotApply = UnityEngine.Object.Instantiate(QuickMenu.prop_QuickMenu_0.transform.Find("UserInteractMenu/User Volume/Lower").gameObject);
-        //    buttonNotApply.transform.SetParent(QuickMenu.prop_QuickMenu_0.transform.Find("UserInteractMenu"), false);
-        //    buttonNotApply.transform.localPosition = new Vector3(buttonNotApply.transform.localPosition.x + (400f * NDBConfig.userPanelButtonX) + 850f, buttonNotApply.transform.localPosition.y + (400f * NDBConfig.userPanelButtonY), buttonNotApply.transform.localPosition.z);
-        //    buttonNotApply.GetComponentInChildren<Button>().onClick = new Button.ButtonClickedEvent();
-        //    buttonNotApply.GetComponentInChildren<Button>().onClick.AddListener(new Action(() =>
-        //    {
-        //        Player selectedPlayer = QuickMenu.prop_QuickMenu_0.field_Private_Player_0;
-        //        string avatarName = selectedPlayer.prop_ApiAvatar_0.name;
-        //        string aviID = selectedPlayer.prop_VRCPlayer_0.prop_VRCAvatarManager_0.prop_ApiAvatar_0.id;
-        //        string avatarHash = avatarName.Substring(0, Math.Min(avatarName.Length, 20)) + ":" + String.Format("{0:X}", aviID.GetHashCode()).Substring(4);
-
-        //        if (!NDBConfig.avatarsToWhichNotApply.Contains(avatarHash))
-        //        {
-        //            NDBConfig.avatarsToWhichNotApply.Add(avatarHash);
-        //        }
-        //        if (enabled) //This is lazy
-        //        {
-        //            RestoreOriginalColliderList();
-        //            AddAllCollidersToAllPlayers();
-        //        }
-        //        //MelonPreferences.SetEntryValue<string>("NDB", "AvatarsToWhichNotApply", NDBConfig.avatarsToWhichNotApply.Aggregate("", (acc, s) => acc += (';' + s)));
-        //        SaveListFiles();
-        //    }));
-        //    buttonNotApply.GetComponentInChildren<Text>().text = "Disable MDB";
-        //    buttonNotApply.SetActive(true);
-
-
-        //    GameObject buttonApply = UnityEngine.Object.Instantiate(QuickMenu.prop_QuickMenu_0.transform.Find("UserInteractMenu/User Volume/Lower").gameObject);
-        //    buttonApply.transform.SetParent(QuickMenu.prop_QuickMenu_0.transform.Find("UserInteractMenu"), false);
-        //    buttonApply.transform.localPosition = new Vector3(buttonApply.transform.localPosition.x + (400f * NDBConfig.userPanelButtonX) + 850f + 400f, buttonApply.transform.localPosition.y + (400f * NDBConfig.userPanelButtonY), buttonApply.transform.localPosition.z);
-        //    buttonApply.GetComponentInChildren<Button>().onClick = new Button.ButtonClickedEvent();
-        //    buttonApply.GetComponentInChildren<Button>().onClick.AddListener(new Action(() =>
-        //    {
-        //        Player selectedPlayer = QuickMenu.prop_QuickMenu_0.field_Private_Player_0;
-        //        string avatarName = selectedPlayer.prop_ApiAvatar_0.name;
-        //        string aviID = selectedPlayer.prop_VRCPlayer_0.prop_VRCAvatarManager_0.prop_ApiAvatar_0.id;
-        //        string avatarHash = avatarName.Substring(0, Math.Min(avatarName.Length, 20)) + ":" + String.Format("{0:X}", aviID.GetHashCode()).Substring(4);
-        //        if (NDBConfig.avatarsToWhichNotApply.Contains(avatarHash))
-        //        {
-        //            NDBConfig.avatarsToWhichNotApply.Remove(avatarHash);
-        //        }
-        //        if (enabled)
-        //        {
-        //            AddCollidersToAllPlayers(avatarsInScene[selectedPlayer._vrcplayer.prop_String_0]);
-        //        }
-        //        //MelonPreferences.SetEntryValue<string>("NDB", "AvatarsToWhichNotApply", NDBConfig.avatarsToWhichNotApply.Aggregate("", (acc, s) => acc += (';' + s)));
-        //        SaveListFiles();
-        //    }));
-        //    buttonApply.GetComponentInChildren<Text>().text = "Enable MDB";
-        //    buttonApply.SetActive(true);
-
+        //    Imports.Hook(target, detour);
         //}
 
 
-        private delegate void AvatarInstantiatedDelegate(IntPtr @this, IntPtr avatarPtr, IntPtr avatarDescriptorPtr, bool loaded);
+        //private delegate void AvatarInstantiatedDelegate(IntPtr @this, IntPtr avatarPtr, IntPtr avatarDescriptorPtr, bool loaded);
 
 
 
@@ -274,12 +218,12 @@ namespace DBMod
 
         private void AvatarMenu(Player selectedPlayer, bool useBigMenu)
         {
-            
+
             string avatarName = selectedPlayer.prop_ApiAvatar_0.name;
             string aviID = selectedPlayer.prop_VRCPlayer_0.prop_VRCAvatarManager_0.prop_ApiAvatar_0.id;
             string avatarHash = avatarName.Substring(0, Math.Min(avatarName.Length, 20)) + ":" + String.Format("{0:X}", aviID.GetHashCode()).Substring(4);
             NDB.otherAvatarButtonList.Clear();
-            
+
             ICustomShowableLayoutedMenu otherAvatarMenu = null;
             otherAvatarMenu = useBigMenu ? ExpansionKitApi.CreateCustomFullMenuPopup(LayoutDescription.WideSlimList) : ExpansionKitApi.CreateCustomQuickMenuPage(LayoutDescriptionCustom.QuickMenu1Column11Row);
 
@@ -309,15 +253,15 @@ namespace DBMod
 
 
             otherAvatarMenu.AddLabel($"Include/Exclude Specific Bones or Colliders\nExlude:{(NDBConfig.excludeSpecificBones ? "Enabled" : "DISABLED")}, Include:{(NDBConfig.includeSpecificBones ? "Enabled" : "DISABLED")} <-- In Mod Settings");
-            otherAvatarMenu.AddLabel($"Excluded objects wont be multiplayered\nIncluded will bypass filtering, ie: 'Only Hand Colliders'"); 
+            otherAvatarMenu.AddLabel($"Excluded objects wont be multiplayered\nIncluded will bypass filtering, ie: 'Only Hand Colliders'");
             otherAvatarMenu.AddSimpleButton("Bones", (() => ShowBoneSpecificMenu(selectedPlayer, useBigMenu)));
             otherAvatarMenu.AddSimpleButton("Colliders", (() => ShowColliderSpecificMenu(selectedPlayer, useBigMenu)));
             //
             otherAvatarMenu.AddLabel(CurrentText(), (button) => NDB.otherAvatarButtonList["Current"] = button.transform);
             string CurrentText()
             {
-                return $"Adjust avatar's DB radius based on a Multiplier or replace entirely - Currently: {(NDBConfig.avatarsToAdjustDBRadius.ContainsKey(avatarHash) ? ( NDBConfig.avatarsToAdjustDBRadius[avatarHash] == -2 ? "Excluded" : (NDBConfig.avatarsToAdjustDBRadius[avatarHash] == 0 ? $"Replacing"  :  $"Multiplied by {(float)NDBConfig.avatarsToAdjustDBRadius[avatarHash] / 10f}")) : "N/A")}";
-            } 
+                return $"Adjust avatar's DB radius based on a Multiplier or replace entirely - Currently: {(NDBConfig.avatarsToAdjustDBRadius.ContainsKey(avatarHash) ? (NDBConfig.avatarsToAdjustDBRadius[avatarHash] == -2 ? "Excluded" : (NDBConfig.avatarsToAdjustDBRadius[avatarHash] == 0 ? $"Replacing" : $"Multiplied by {(float)NDBConfig.avatarsToAdjustDBRadius[avatarHash] / 10f}")) : "N/A")}";
+            }
 
             otherAvatarMenu.AddSimpleButton($"Multiply/Replace/Zero Radius Exclude - Menu", (() =>
             {
@@ -325,14 +269,14 @@ namespace DBMod
                 MultiReplaceRadiusMenu(selectedPlayer, useBigMenu, avatarName, aviID, avatarHash);
             }));
 
-            
+
             otherAvatarMenu.AddLabel($"Auto add hand colliders to this avatar\n{(NDBConfig.addAutoCollidersAll ? "-Currently ENABLED for all avatars in Mod Settings-" : "-This can be enabled for all avatars in Mod Settings-")}");
-            
+
             string HandCollidersText()
             {
                 return $"Hand Colliders: {(NDBConfig.avatarsToAddColliders.ContainsKey(avatarHash) ? (NDBConfig.avatarsToAddColliders[avatarHash] ? "Enabled for this Avatar" : "Disabled for this Avatar") : "N/A")}";
             }
-            
+
             otherAvatarMenu.AddSimpleButton(HandCollidersText(), () =>
             {
                 if (NDBConfig.avatarsToAddColliders.ContainsKey(avatarHash))
@@ -346,14 +290,14 @@ namespace DBMod
                 else NDBConfig.avatarsToAddColliders.Add(avatarHash, true); //Change to Enable
 
                 NDB.otherAvatarButtonList["HandColliders"].GetComponentInChildren<Text>().text = HandCollidersText();
-               //MelonPreferences.SetEntryValue<string>("NDB", "AvatarsToAddColliders", string.Join("; ", NDBConfig.avatarsToAddColliders.Select(p => string.Format("{0}, {1}", p.Key, p.Value))));
+                //MelonPreferences.SetEntryValue<string>("NDB", "AvatarsToAddColliders", string.Join("; ", NDBConfig.avatarsToAddColliders.Select(p => string.Format("{0}, {1}", p.Key, p.Value))));
                 //SaveListFiles();
                 try { VRCPlayer.Method_Public_Static_Void_APIUser_0(selectedPlayer.prop_APIUser_0); } //Reload Avatar - Thanks loukylor - https://github.com/loukylor/VRC-Mods/blob/main/ReloadAvatars/ReloadAvatarsMod.cs
                 catch { } // Ignore
             }, (button) => NDB.otherAvatarButtonList["HandColliders"] = button.transform);
 
-            if(useBigMenu) otherAvatarMenu.AddSimpleButton("Close", () => otherAvatarMenu.Hide());
-            
+            if (useBigMenu) otherAvatarMenu.AddSimpleButton("Close", () => otherAvatarMenu.Hide());
+
             otherAvatarMenu.Show();
         }
 
@@ -401,12 +345,12 @@ namespace DBMod
 
             //if (NDBConfig.adjustRadiusForAllZeroBones)
             //{
-                mrrMenu.AddSimpleButton("Exclude from Adjusting All Zero Radius Bones", () =>
-                {
-                    if (!NDBConfig.avatarsToAdjustDBRadius.ContainsKey(avatarHash)) NDBConfig.avatarsToAdjustDBRadius.Add(avatarHash, -2);
-                    else NDBConfig.avatarsToAdjustDBRadius[avatarHash] = -2;
-                    RadiusButtonEnd();
-                });
+            mrrMenu.AddSimpleButton("Exclude from Adjusting All Zero Radius Bones", () =>
+            {
+                if (!NDBConfig.avatarsToAdjustDBRadius.ContainsKey(avatarHash)) NDBConfig.avatarsToAdjustDBRadius.Add(avatarHash, -2);
+                else NDBConfig.avatarsToAdjustDBRadius[avatarHash] = -2;
+                RadiusButtonEnd();
+            });
             mrrMenu.AddLabel("^Exclude the selected avatar from being adjusted by 'Replace DB radius: Adjust All Zero Radius Bones' in Mod Settings");
             //}
             mrrMenu.AddSimpleButton("Remove Multiplier/Replace/Exclude", () =>
@@ -418,8 +362,8 @@ namespace DBMod
                 }
             });
 
-            mrrMenu.AddSimpleButton("<--Back", () => {  mrrMenu.Hide();  AvatarMenu(selectedPlayer, useBigMenu); });
-            mrrMenu.AddSimpleButton("--Close--", () =>{ mrrMenu.Hide(); });
+            mrrMenu.AddSimpleButton("<--Back", () => { mrrMenu.Hide(); AvatarMenu(selectedPlayer, useBigMenu); });
+            mrrMenu.AddSimpleButton("--Close--", () => { mrrMenu.Hide(); });
             mrrMenu.Show();
         }
 
@@ -529,7 +473,7 @@ namespace DBMod
                     if (NDB.specificButtonList.ContainsKey(hashBone)) continue; //For the instance where a bone may have more than one db/dbc
                     NDB.specificButtonList.Add(hashBone, null);
                     string boneName = bone.m_Root.name; //To stop an NRE if the player leaves or switches when menu is open
-                    boneSpecificMenu.AddSimpleButton($"{(NDBConfig.bonesToExclude.Contains(hashBone) ? "Excluded - " : (NDBConfig.bonesToInclude.Contains(hashBone) ? "Included - " : "N/A - ") )} {boneName}", () =>
+                    boneSpecificMenu.AddSimpleButton($"{(NDBConfig.bonesToExclude.Contains(hashBone) ? "Excluded - " : (NDBConfig.bonesToInclude.Contains(hashBone) ? "Included - " : "N/A - "))} {boneName}", () =>
                     {
                         ToggleBoneSpecific(hashBone, boneName);
                     }, (button) => NDB.specificButtonList[hashBone] = button.transform);
@@ -556,7 +500,7 @@ namespace DBMod
                 NDBConfig.bonesToExclude.Add(hashBone);
                 NDB.specificButtonList[hashBone].GetComponentInChildren<Text>().text = $"Excluded - {boneName}";
             }
-            else if(NDBConfig.bonesToExclude.Contains(hashBone))
+            else if (NDBConfig.bonesToExclude.Contains(hashBone))
             {
                 NDBConfig.bonesToExclude.Remove(hashBone);
                 NDBConfig.bonesToInclude.Add(hashBone);
@@ -564,10 +508,10 @@ namespace DBMod
             }
             else
             { //Removing both to ensure consistency
-                if(NDBConfig.bonesToExclude.Contains(hashBone)) NDBConfig.bonesToExclude.Remove(hashBone);
-                if(NDBConfig.bonesToInclude.Contains(hashBone)) NDBConfig.bonesToInclude.Remove(hashBone);
+                if (NDBConfig.bonesToExclude.Contains(hashBone)) NDBConfig.bonesToExclude.Remove(hashBone);
+                if (NDBConfig.bonesToInclude.Contains(hashBone)) NDBConfig.bonesToInclude.Remove(hashBone);
                 NDB.specificButtonList[hashBone].GetComponentInChildren<Text>().text = $"N/A - {boneName}";
-            } 
+            }
         }
 
         private void ShowColliderSpecificMenu(Player selectedPlayer, bool useBigMenu)
@@ -592,7 +536,7 @@ namespace DBMod
                     if (NDB.specificButtonList.ContainsKey(hashBone)) continue; //For the instance where a bone may have more than one db/dbc
                     NDB.specificButtonList.Add(hashBone, null);
                     string boneName = bone.name; //To stop an NRE if the player leaves or switches when menu is open
-                    colliderSpecificMenu.AddSimpleButton($"{((NDBConfig.collidersToExclude.Contains(hashBone)) ? "Excluded - " : (NDBConfig.collidersToInclude.Contains(hashBone) ? "Included - " : "N/A - ") )} {boneName}", () =>
+                    colliderSpecificMenu.AddSimpleButton($"{((NDBConfig.collidersToExclude.Contains(hashBone)) ? "Excluded - " : (NDBConfig.collidersToInclude.Contains(hashBone) ? "Included - " : "N/A - "))} {boneName}", () =>
                     {
                         ToggleColliderSpecific(hashBone, boneName);
                     }, (button) => NDB.specificButtonList[hashBone] = button.transform);
@@ -671,9 +615,9 @@ namespace DBMod
         {
             try
             {
-            string url = "https://raw.githubusercontent.com/9E4ECDDE/MultiplayerDynamicBonesMod/master/updateCheck";
-            WebClient client = new WebClient();
-            string updateCheckString = client.DownloadString(url);
+                string url = "https://raw.githubusercontent.com/9E4ECDDE/MultiplayerDynamicBonesMod/master/updateCheck";
+                WebClient client = new WebClient();
+                string updateCheckString = client.DownloadString(url);
 
                 if (float.Parse(updateCheckString) > float.Parse(NDB.VERSION_STR))
                 {
@@ -702,8 +646,8 @@ namespace DBMod
                     MelonPreferences.SetEntryValue<bool>("NDB", "MoarBones", true);
                     NDBConfig.moarBones = true;
                 }
-                }
-            catch (Exception ex) { MelonLogger.Error( ex.ToString()); return; }
+            }
+            catch (Exception ex) { MelonLogger.Error(ex.ToString()); return; }
         }
 
         private static unsafe void RegisterModPrefs()
@@ -741,19 +685,20 @@ namespace DBMod
             MelonPreferences.CreateEntry<bool>("NDB", "AdjustRadiusExcludeZero", false, "Replace DB radius: Excludes bone with a radius of 0 from being changed");
             MelonPreferences.CreateEntry<bool>("NDB", "AdjustRadiusForAllZeroBones", false, "Replace DB radius: Adjust All Zero Radius Bones - Replace the radius for all bones with a radius of 0 on all avatars");
             MelonPreferences.CreateEntry<bool>("NDB", "DisableAllBones", false, "Disable all Dynamic Bones in Scene [QM]");
-            
+
             //Mod settings
-            MelonPreferences.CreateEntry<bool>("NDB", "KeybindsEnabled", true, "Enable keyboard actuation(F1, F4 and F8)"); 
+            MelonPreferences.CreateEntry<bool>("NDB", "KeybindsEnabled", true, "Enable keyboard actuation(F1, F4 and F8)");
             MelonPreferences.CreateEntry<int>("NDB", "UpdateMode", 2, "A value of 2 will notify the user when a new version of the mod is available, while 1 will not.");
             MelonPreferences.CreateEntry<bool>("NDB", "EnableEditor", false, "EnableEditor (F5)");
             //MelonPreferences.CreateEntry<bool>("NDB", "EnableUserPanelButton-AvatarsExclude", true, "Enable the button that allows per-avatar dynamic bones enable or disable (Restart Req)");
             //MelonPreferences.CreateEntry<int>("NDB", "UserPanelButtonX", 0, "X offset for the user panel button (Restart Req - Default:0)");
             //MelonPreferences.CreateEntry<int>("NDB", "UserPanelButtonY", -1, "Y offset for the user panel button (Restart Req - Default:-1)");
             MelonPreferences.CreateEntry<int>("NDB", "QuickMenuButton", 1, "Quick Menu Button - 1:Settings Menu, 2:Just Toggle, 0:None (Restart Req)");
-            MelonPreferences.CreateEntry<int>("NDB", "LogLevel", 0, "Console Logging Level: 0-Default, 1-Info, 2-Debug, 3-ExtraDebug(Very laggy)"); // 1-Just info, 2-Limited to once per avatar or behind a filter IF, 3-Spammy stuff in loops
+            MelonPreferences.CreateEntry<string>("NDB", "LogLevelS", "0", "Console Logging Level:"); // 1-Just info, 2-Limited to once per avatar or behind a filter IF, 3-Spammy stuff in loops
+            ExpansionKitApi.RegisterSettingAsStringEnum("NDB", "LogLevelS", new[] { ("0", "Default"), ("1", "Info"), ("2", "Debug"), ("3", "ExtraDebug(Very laggy)"), ("-1", "Silent Mode") });
             MelonPreferences.CreateEntry<bool>("NDB", "MoarBones", false, "MoarBones: I hear you like bones~ (Makes all bones Dynamic)");
             MelonPreferences.CreateEntry<bool>("NDB", "MoarBonesPref", true, "MoarBones: Performance Limit");
-            MelonPreferences.CreateEntry<bool>("NDB", "MoarBonesNotLocal", true, "MoarBones: Don't effect local avatar"); 
+            MelonPreferences.CreateEntry<bool>("NDB", "MoarBonesNotLocal", true, "MoarBones: Don't effect local avatar");
             //Change to use this at one point
             //ExpansionKitApi.RegisterSettingAsStringEnum("NDB", "QuickMenuButton", new[] { ("0", "Disable Trust Colours"), ("friends", "Trust Colours (with friend colour)"), ("trustonly", "Trust Colours (Ignore friend colour)"), ("trustname", "Trust Colours on Names Only") });
 
@@ -786,10 +731,14 @@ namespace DBMod
             {
                 harmonyInstance = HarmonyInstance.Create("NDB");
 
-                IntPtr funcToHook = (IntPtr)typeof(VRCAvatarManager.MulticastDelegateNPublicSealedVoGaVRBoUnique).GetField("NativeMethodInfoPtr_Invoke_Public_Virtual_New_Void_GameObject_VRC_AvatarDescriptor_Boolean_0", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
-                Hook(funcToHook, new System.Action<IntPtr, IntPtr, IntPtr, bool>(OnAvatarInstantiated).Method.MethodHandle.GetFunctionPointer());
-                onAvatarInstantiatedDelegate = Marshal.GetDelegateForFunctionPointer<AvatarInstantiatedDelegate>(*(IntPtr*)funcToHook);
-                MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedDelegate != null) ? "Yes!" : "No: critical error!!")}");
+                //IntPtr funcToHook = (IntPtr)typeof(VRCAvatarManager.MulticastDelegateNPublicSealedVoGaVRBoUnique).GetField("NativeMethodInfoPtr_Invoke_Public_Virtual_New_Void_GameObject_VRC_AvatarDescriptor_Boolean_0", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+                //Hook(funcToHook, new System.Action<IntPtr, IntPtr, IntPtr, bool>(OnAvatarInstantiated).Method.MethodHandle.GetFunctionPointer());
+                //onAvatarInstantiatedDelegate = Marshal.GetDelegateForFunctionPointer<AvatarInstantiatedDelegate>(*(IntPtr*)funcToHook);
+                //MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedDelegate != null) ? "Yes!" : "No: critical error!!")}");
+
+                MethodBase funcToHook = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Private_Void_GameObject_VRC_AvatarDescriptor_Boolean_") && !Xref.CheckMethod(mi, "Avatar is Ready, Initializing")); //Thanks to https://github.com/loukylor/VRC-Mods/blob/7b0663da72b775ea5018ec546f914a5fc06b0013/PlayerList/Utilities/NetworkEvents.cs#L84
+                onAvatarInstantiatedPatch = harmonyInstance.Patch(funcToHook, null, new HarmonyMethod(typeof(NDB).GetMethod(nameof(OnAvatarInstantiated), BindingFlags.NonPublic | BindingFlags.Static)));
+                MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedPatch != null) ? "Yes!" : "No: critical error!!")}");
 
                 onJoinedRoomPatch = harmonyInstance.Patch(typeof(NetworkManager).GetMethods().Single((fi) => fi.Name.Contains("OnJoinedRoom")), new HarmonyMethod(typeof(NDB).GetMethod(nameof(Reset))));
                 MelonLogger.Msg(ConsoleColor.Blue, $"Patched OnJoinedRoom? {((onJoinedRoomPatch != null) ? "Yes!" : "No: critical error!!")}");
@@ -804,7 +753,7 @@ namespace DBMod
             }
             finally
             {
-                if (onAvatarInstantiatedDelegate == null || onJoinedRoomPatch == null || !isPlayerEventAdded1 || !isPlayerEventAdded2)
+                if (onAvatarInstantiatedPatch == null || onJoinedRoomPatch == null || !isPlayerEventAdded1 || !isPlayerEventAdded2)
                 {
                     this.enabled = false;
                     MelonLogger.Msg(ConsoleColor.Red, "Multiplayer Dynamic Bones mod suffered a critical error! Mod version may be obsolete.");
@@ -817,7 +766,6 @@ namespace DBMod
         {
             theDelegate.field_Private_HashSet_1_UnityAction_1_T_0.Add(theEvent);
         }
-
 
         private enum SeenFirst
         {
@@ -866,16 +814,21 @@ namespace DBMod
             OnPlayerLeft(player);
         }
 
-        public void LogLevelWarning()
+        public void LogLevelWarning(int loglvl)
         {
-            if (MelonPreferences.GetEntryValue<int>("NDB", "LogLevel") >= 3) MelonLogger.Msg(ConsoleColor.Magenta, $"Log level set to debug extra (3+), this will spam the console a lot and will cause lag. \n ======================== Disable this unless you are actively trying to debug something ======================== \n ======================== Disable this unless you are actively trying to debug something ========================");
-            else if (MelonPreferences.GetEntryValue<int>("NDB", "LogLevel") == 2) MelonLogger.Msg(ConsoleColor.Magenta, $"Log level set to debug (2), this is mostly limited to once per avatar items or if(s) that get met.");
-            else if (MelonPreferences.GetEntryValue<int>("NDB", "LogLevel") == 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Log level set to info (1).");
+            if (loglvl >= 3) MelonLogger.Msg(ConsoleColor.Magenta, $"Log level set to debug extra (3+), this will spam the console a lot and will cause lag. \n ======================== Disable this unless you are actively trying to debug something ======================== \n ======================== Disable this unless you are actively trying to debug something ========================");
+            else if (loglvl == 2) MelonLogger.Msg(ConsoleColor.Magenta, $"Log level set to debug (2), this is mostly limited to once per avatar items or if(s) that get met.");
+            else if (loglvl == 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Log level set to info (1).");
+            else if (loglvl == -1) MelonLogger.Msg(ConsoleColor.Yellow, $"Log level set to silent mode (-1). \n ======================== No Add/Leave Log Messages Will Print ======================== \n");
         }
 
         public override void OnPreferencesSaved()
         {
-            if (NDBConfig.logLevel != MelonPreferences.GetEntryValue<int>("NDB", "LogLevel")) LogLevelWarning(); //If settings changed, send warning
+            int loglvl = 0;
+            try { loglvl = int.Parse(MelonPreferences.GetEntryValue<string>("NDB", "LogLevelS")); }
+            catch { MelonLogger.Msg(ConsoleColor.Yellow, $"Log level value is invalid"); }
+            if (NDBConfig.logLevel != loglvl) LogLevelWarning(loglvl); //If settings changed, send warning
+
             if (!firstrun && MelonPreferences.GetEntryValue<bool>("NDB", "MoarBones") != NDBConfig.moarBones)
             {
                 MelonLogger.Msg(ConsoleColor.Magenta, "MoarBones State Changed, Reload All Avatars");
@@ -886,6 +839,7 @@ namespace DBMod
                 }
                 catch { MelonLogger.Msg(ConsoleColor.Red, "Failed to reload all avatars - You will have to rejoin the world - Check for a newer version of this mod or report this bug"); } // Ignore
             }
+
             NDBConfig.enabledByDefault = MelonPreferences.GetEntryValue<bool>("NDB", "EnabledByDefault");
             NDBConfig.disallowInsideColliders = MelonPreferences.GetEntryValue<bool>("NDB", "DisallowInsideColliders");
             NDBConfig.destroyInsideColliders = MelonPreferences.GetEntryValue<bool>("NDB", "DestroyInsideColliders");
@@ -904,7 +858,7 @@ namespace DBMod
             NDBConfig.onlyOptimize = MelonPreferences.GetEntryValue<bool>("NDB", "OptimizeOnly");
             NDBConfig.updateMode = MelonPreferences.GetEntryValue<int>("NDB", "UpdateMode");
             //NDBConfig.hasShownCompatibilityIssueMessage = MelonPreferences.GetEntryValue<bool>("NDB", "HasShownCompatibilityIssueMessage");
-            
+
             NDBConfig.enableEditor = MelonPreferences.GetEntryValue<bool>("NDB", "EnableEditor");
             NDBConfig.breastsOnly = MelonPreferences.GetEntryValue<bool>("NDB", "OnlyDynamicBonesOnBreasts");
             //NDBConfig.enableUserPanelButton = MelonPreferences.GetEntryValue<bool>("NDB", "EnableUserPanelButton-AvatarsExclude");
@@ -915,10 +869,10 @@ namespace DBMod
             NDBConfig.includeSpecificBones = MelonPreferences.GetEntryValue<bool>("NDB", "IncludeSpecificBones");
             NDBConfig.interactSelf = MelonPreferences.GetEntryValue<bool>("NDB", "InteractSelf");
             NDBConfig.othersInteractSelf = MelonPreferences.GetEntryValue<bool>("NDB", "OthersInteractSelf");
-            
+
             NDBConfig.boneRadiusDivisor = MelonPreferences.GetEntryValue<int>("NDB", "BoneRadiusDivisor");
             NDBConfig.endBoneRadius = MelonPreferences.GetEntryValue<float>("NDB", "EndBoneRadius");
-            
+
             NDBConfig.addAutoCollidersAll = MelonPreferences.GetEntryValue<bool>("NDB", "AddAutoCollidersAll");
             NDBConfig.adjustRadiusExcludeZero = MelonPreferences.GetEntryValue<bool>("NDB", "AdjustRadiusExcludeZero");
             NDBConfig.adjustRadiusForAllZeroBones = MelonPreferences.GetEntryValue<bool>("NDB", "AdjustRadiusForAllZeroBones");
@@ -930,11 +884,11 @@ namespace DBMod
 
             SaveListFiles();
 
-            NDBConfig.logLevel = MelonPreferences.GetEntryValue<int>("NDB", "LogLevel");
+            NDBConfig.logLevel = loglvl;
         }
 
 
-        
+
 
         private void InitFileLists()
         {
@@ -1014,7 +968,8 @@ namespace DBMod
                         NDBConfig.avatarsToAdjustDBRadius = new Dictionary<string, int>(File.ReadAllLines(AvatarsToAdjustDBRadiusPath).Select(s => s.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)).Where(x => x.Length == 2).ToDictionary(p => p[0].Trim(), p => Int32.Parse(p[1].Trim())));
                         MelonLogger.Msg(ConsoleColor.DarkBlue, "Loaded - " + AvatarsToAdjustDBRadiusPath);
                     }
-                } else NDBConfig.avatarsToAdjustDBRadius = new Dictionary<string, int>();
+                }
+                else NDBConfig.avatarsToAdjustDBRadius = new Dictionary<string, int>();
             }
             catch (Exception ex)
             {
@@ -1034,7 +989,7 @@ namespace DBMod
                         File.WriteAllLines(AvatarsToAddCollidersPath, NDBConfig.avatarsToAddColliders.Select(p => string.Format("{0}, {1}", p.Key, p.Value)), Encoding.UTF8); //Save file
                         MelonPreferences.SetEntryValue<string>("NDB", "AvatarsToAddColliders", "");
                         migrated = true;
-                        MelonLogger.Msg(ConsoleColor.Blue, "Migrated from MelonPreferences to " + AvatarsToAddCollidersPath );
+                        MelonLogger.Msg(ConsoleColor.Blue, "Migrated from MelonPreferences to " + AvatarsToAddCollidersPath);
                     }
                     else MelonLogger.Msg(ConsoleColor.Red, "MelonPreferences has content but " + AvatarsToAddCollidersPath + " is not empty. Can not migrate records. ");
                 }
@@ -1046,12 +1001,14 @@ namespace DBMod
                         MelonLogger.Msg(ConsoleColor.DarkBlue, "Loaded - " + AvatarsToAddCollidersPath);
                     }
 
-                } else NDBConfig.avatarsToAddColliders = new Dictionary<string, bool>();
+                }
+                else NDBConfig.avatarsToAddColliders = new Dictionary<string, bool>();
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 MelonLogger.Error("Possible corrupted file: " + AvatarsToAddCollidersPath + " File will be renamed and new file created  \n" + ex.ToString());
                 NDBConfig.avatarsToAddColliders = new Dictionary<string, bool>();
-                File.Move(AvatarsToAddCollidersPath,AvatarsToAddCollidersPath + DateTime.Now.ToString("yyyy'-'MM'-'dd'_'HH'-'mm'-'ss") + ".bkp");
+                File.Move(AvatarsToAddCollidersPath, AvatarsToAddCollidersPath + DateTime.Now.ToString("yyyy'-'MM'-'dd'_'HH'-'mm'-'ss") + ".bkp");
             }
         }
 
@@ -1073,7 +1030,7 @@ namespace DBMod
                     }
                     else MelonLogger.Msg(ConsoleColor.Red, $"MelonPreferences has content but {FilePath} is not empty. Can not migrate records. ");
                 }
-                 if (!IsTextFileEmpty(FilePath))
+                if (!IsTextFileEmpty(FilePath))
                 {
                     if (!migrated)
                     {
@@ -1170,22 +1127,22 @@ namespace DBMod
             _Instance.DeleteOriginalColliders(player._vrcplayer.prop_String_0);
             _Instance.RemovePlayerFromDict(player._vrcplayer.prop_String_0);
             _Instance.RemoveDynamicBonesFromVisibilityList(player._vrcplayer.prop_String_0);
-            MelonLogger.Msg(ConsoleColor.Blue, $"Player {player._vrcplayer.prop_String_0} left the room so all his dynamic bones info was deleted");
+            if (NDBConfig.logLevel >= 0) MelonLogger.Msg(ConsoleColor.Blue, $"Player {player._vrcplayer.prop_String_0} left the room so all his dynamic bones info was deleted");
             //Console.WriteLine("ONPLAYERLEFT SUCCESS");
         }
 
 
-        private static void OnAvatarInstantiated(IntPtr @this, IntPtr avatarPtr, IntPtr avatarDescriptorPtr, bool loaded)
+        private static void OnAvatarInstantiated(GameObject __0, VRC.SDKBase.VRC_AvatarDescriptor __1, bool __2)
         {
             //Console.WriteLine("ONAVATARINSTANTIATED START");
-            onAvatarInstantiatedDelegate(@this, avatarPtr, avatarDescriptorPtr, loaded);
+            //onAvatarInstantiatedDelegate(@this, avatarPtr, avatarDescriptorPtr, loaded);
             //Console.WriteLine("ONAVATARINSTANTIATED PAST-CALLBACK");
 
             try
             {
-                if (loaded)
+                if (__2)
                 {
-                    GameObject avatar = new GameObject(avatarPtr);
+                    GameObject avatar = __0;
                     //VRC.SDKBase.VRC_AvatarDescriptor avatarDescriptor = new VRC.SDKBase.VRC_AvatarDescriptor(avatarDescriptorPtr);
 
 
@@ -1233,8 +1190,8 @@ namespace DBMod
 
 
 
-                    MelonLogger.Msg(ConsoleColor.Blue, "New avatar loaded, added to avatar list");
-                    MelonLogger.Msg(ConsoleColor.Green, $"Added {avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_String_0}");
+                    if (NDBConfig.logLevel >= 0) MelonLogger.Msg(ConsoleColor.Blue, "New avatar loaded, added to avatar list");
+                    if (NDBConfig.logLevel >= 0) MelonLogger.Msg(ConsoleColor.Green, $"Added {avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_String_0}");
                 }
             }
             catch (System.Exception ex)
@@ -1271,15 +1228,15 @@ namespace DBMod
                 DynamicBone newBone = Hips.gameObject.AddComponent<DynamicBone>();
                 newBone.m_Root = Hips;
                 newBone.m_Damping = 0.05f; newBone.m_Elasticity = 0.02f; newBone.m_Stiffness = 0.2f; newBone.m_Inert = 0.2f;
-                newBone.m_Radius = 0.05f / ((Hips.transform.lossyScale.x + Hips.transform.lossyScale.y + Hips.transform.lossyScale.z)/3);
+                newBone.m_Radius = 0.05f / ((Hips.transform.lossyScale.x + Hips.transform.lossyScale.y + Hips.transform.lossyScale.z) / 3);
                 newBone.enabled = true;
                 newBone.field_Private_Single_4 = 60f; // This appears to drive m_UpdateRate
                 newBone.m_UpdateRate = 60f;
                 newBone.m_DistantDisable = false;
-                newBone.m_Colliders = new Il2CppSystem.Collections.Generic.List<DynamicBoneCollider>(); newBone.m_Exclusions = new Il2CppSystem.Collections.Generic.List<Transform>();    
+                newBone.m_Colliders = new Il2CppSystem.Collections.Generic.List<DynamicBoneCollider>(); newBone.m_Exclusions = new Il2CppSystem.Collections.Generic.List<Transform>();
                 newBone.m_DampingDistrib = flat; newBone.m_ElasticityDistrib = flat; newBone.m_StiffnessDistrib = flat; newBone.m_InertDistrib = flat; newBone.m_RadiusDistrib = flat;
 
-                var dbList =  avatar.transform.root.GetComponentInChildren<VRC.DynamicBoneController>().field_Private_List_1_DynamicBone_0;
+                var dbList = avatar.transform.root.GetComponentInChildren<VRC.DynamicBoneController>().field_Private_List_1_DynamicBone_0;
                 dbList.Add(newBone);
                 avatar.transform.root.GetComponentInChildren<VRC.DynamicBoneController>().Update();
 
@@ -1328,7 +1285,7 @@ namespace DBMod
                 AddToPlayerDict(key, newValue);
                 RemoveBonesOfGameObjectInAllPlayers(oldColliders);
                 RemoveDynamicBonesFromVisibilityList(key);
-                MelonLogger.Msg(ConsoleColor.Blue, $"User {key} swapped avatar, system updated");
+                if (NDBConfig.logLevel >= 0) MelonLogger.Msg(ConsoleColor.Blue, $"User {key} swapped avatar, system updated");
             }
             if (enabled) AddCollidersToAllPlayers(newValue);
             if (newValue.Item1 != localPlayer)
@@ -1426,7 +1383,7 @@ namespace DBMod
         }
 
 
-        private void ApplyBoneSettings(DynamicBone bone, string avatarHash) 
+        private void ApplyBoneSettings(DynamicBone bone, string avatarHash)
         {
             try
             {
@@ -1453,10 +1410,10 @@ namespace DBMod
         {
             try
             {                                   //If (Has Key OR adjustRadiusForAllZeroBones) && m_root is NOT null && Keyvalue is NOT -2 (Exclude from Radius change) 
-                if ((NDBConfig.avatarsToAdjustDBRadius.ContainsKey(avatarHash) || NDBConfig.adjustRadiusForAllZeroBones) && !(bone.m_Root is null) && !(NDBConfig.avatarsToAdjustDBRadius.ContainsKey(avatarHash) && NDBConfig.avatarsToAdjustDBRadius[avatarHash] == -2) )
+                if ((NDBConfig.avatarsToAdjustDBRadius.ContainsKey(avatarHash) || NDBConfig.adjustRadiusForAllZeroBones) && !(bone.m_Root is null) && !(NDBConfig.avatarsToAdjustDBRadius.ContainsKey(avatarHash) && NDBConfig.avatarsToAdjustDBRadius[avatarHash] == -2))
                 {
-                    if(NDBConfig.adjustRadiusExcludeZero && bone.m_Radius == 0) { if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Bone {bone.m_Root.name} has a radius of 0 and adjustRadiusExcludeZero is True in Mod settings"); return; }
-                    
+                    if (NDBConfig.adjustRadiusExcludeZero && bone.m_Radius == 0) { if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Bone {bone.m_Root.name} has a radius of 0 and adjustRadiusExcludeZero is True in Mod settings"); return; }
+
                     int adj = 0;
                     if (NDBConfig.avatarsToAdjustDBRadius.ContainsKey(avatarHash)) adj = NDBConfig.avatarsToAdjustDBRadius[avatarHash];
                     else
@@ -1476,7 +1433,7 @@ namespace DBMod
 
                     if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Bone Legnth {boneTotalLength.ToString("F99").TrimEnd('0')}, scale {scale.ToString("F99").TrimEnd('0')}, orig rad {orgRad.ToString("F99").TrimEnd('0')}");
 
-                    if (adj == 0 || adj == -1 ) //Replacing length with calculated one
+                    if (adj == 0 || adj == -1) //Replacing length with calculated one
                     {
                         //if (bone.m_Root.transform.GetChildCount() == 0) bone.m_Radius = NDBConfig.endBoneRadius / scale; //No child bones means we can't measure anything
                         if (bone.m_Root.transform.GetChildCount() == 0) bone.m_Radius = (boneTotalLength) / scale; //No child bones means we can't measure anything
@@ -1484,16 +1441,16 @@ namespace DBMod
                         {
                             float distance = 0;
 
-                                int depth = GetChildDepth(bone.m_Root, 1);
-                                float distance1 = boneTotalLength / depth; 
-                                float distance2 = Vector3.Distance(bone.m_Root.transform.position, bone.m_Root.transform.GetChild(0).position);
+                            int depth = GetChildDepth(bone.m_Root, 1);
+                            float distance1 = boneTotalLength / depth;
+                            float distance2 = Vector3.Distance(bone.m_Root.transform.position, bone.m_Root.transform.GetChild(0).position);
 
-                                distance = Math.Max(distance1, distance2);
-                                if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"dist1: {distance1.ToString("F99").TrimEnd('0')} (length {boneTotalLength.ToString("F99").TrimEnd('0')}/depth {depth.ToString("F99").TrimEnd('0')}, dist2 {distance2.ToString("F99").TrimEnd('0')}, Max {distance.ToString("F99").TrimEnd('0')}");
+                            distance = Math.Max(distance1, distance2);
+                            if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"dist1: {distance1.ToString("F99").TrimEnd('0')} (length {boneTotalLength.ToString("F99").TrimEnd('0')}/depth {depth.ToString("F99").TrimEnd('0')}, dist2 {distance2.ToString("F99").TrimEnd('0')}, Max {distance.ToString("F99").TrimEnd('0')}");
                             bone.m_Radius = (distance / NDBConfig.boneRadiusDivisor) / scale;
                         }
 
-                        if(bone.m_Radius == 0 ) bone.m_Radius = NDBConfig.endBoneRadius / scale; //If 0 still, set default
+                        if (bone.m_Radius == 0) bone.m_Radius = NDBConfig.endBoneRadius / scale; //If 0 still, set default
 
                         if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.DarkYellow, $"DB Radius replaced for avatar {avatarHash}, Bone {bone.m_Root.name}, Was: {(orgRad * scale).ToString("F99").TrimEnd('0')}, Now: {(bone.m_Radius * scale).ToString("F99").TrimEnd('0')}");
                     }
@@ -1509,16 +1466,16 @@ namespace DBMod
 
                 }
             }
-            catch (Exception ex) { MelonLogger.Msg(ConsoleColor.Red, ex.ToString()); } 
+            catch (Exception ex) { MelonLogger.Msg(ConsoleColor.Red, ex.ToString()); }
         }
 
         private static void ApplyBoneChanges(DynamicBone bone)
-        { 
+        {
             bone.Method_Private_Void_6();//InitTransforms - Reset positions before adding new particles. If you don't do this the new particle will be offest from the bone
             bone.Method_Private_Void_5();//SetupParticles
         }
 
-        private static int GetChildDepth(Transform parent, int depth) 
+        private static int GetChildDepth(Transform parent, int depth)
         {
             if (depth < 1) depth = 1;//1 cause we count the first transform this comes from
             if (parent.childCount >= 1)
@@ -1555,7 +1512,7 @@ namespace DBMod
             { MelonLogger.Msg(ConsoleColor.Blue, $"Avatar '{player.Item6.Item2}' disabled in quick menu"); return; }
             bool includeAvatar = false;
             if (NDBConfig.avatarsToWhichNotApply.ContainsKey(player.Item6.Item2) && NDBConfig.avatarsToWhichNotApply[player.Item6.Item2] == false)
-            { includeAvatar = true;  MelonLogger.Msg(ConsoleColor.Blue, $"Avatar '{player.Item6.Item2}' specifically enabled in quick menu, bypassing checks"); }
+            { includeAvatar = true; MelonLogger.Msg(ConsoleColor.Blue, $"Avatar '{player.Item6.Item2}' specifically enabled in quick menu, bypassing checks"); }
             if (NDBConfig.disallowDesktoppers && !includeAvatar && !player.Item2 && player.Item1 != localPlayer)
             { LogDebug(2, ConsoleColor.Red, $"Filtered r - disallowDesktoppers.True Player is Desktop & Not localplayer(me)"); return; }
             if (NDBConfig.onlyForMeAndFriends && !includeAvatar && !player.Item5 && player.Item1 != localPlayer)
@@ -1570,24 +1527,24 @@ namespace DBMod
                     { LogDebug(2, ConsoleColor.Blue, $"Filtered c.1 - Avatar '{otherPlayerInfo.Item6.Item2}' disabled in quick menu - 1.2"); continue; }
                     bool includeAvatarOther = false;
                     if (NDBConfig.avatarsToWhichNotApply.ContainsKey(otherPlayerInfo.Item6.Item2) && NDBConfig.avatarsToWhichNotApply[otherPlayerInfo.Item6.Item2] == false)
-                    { includeAvatarOther = true; LogDebug(2,ConsoleColor.Blue, $"Avatar '{otherPlayerInfo.Item6.Item2}' specifically enabled in quick menu, bypassing checks - 1.2"); }
+                    { includeAvatarOther = true; LogDebug(2, ConsoleColor.Blue, $"Avatar '{otherPlayerInfo.Item6.Item2}' specifically enabled in quick menu, bypassing checks - 1.2"); }
                     if (NDBConfig.disallowDesktoppers && !includeAvatarOther && !otherPlayerInfo.Item2 && otherPlayerInfo.Item1 != localPlayer)
                     { LogDebug(3, ConsoleColor.Red, $"Filtered c.1 - disallowDesktoppers.True OtherPlayer is Desktop & Not localplayer(me)"); continue; }
                     if (NDBConfig.onlyForMeAndFriends && !includeAvatarOther && !otherPlayerInfo.Item5 && otherPlayerInfo.Item1 != localPlayer)
                     { LogDebug(3, ConsoleColor.Red, $"Filtered c.1 - onlyForMeAndFriends.True OtherPlayer is not a friend & Not localplayer(me)"); continue; }
 
-                    if (!NDBConfig.interactSelf && (otherPlayerInfo.Item1 == player.Item1) && (otherPlayerInfo.Item1 == localPlayer)) 
+                    if (!NDBConfig.interactSelf && (otherPlayerInfo.Item1 == player.Item1) && (otherPlayerInfo.Item1 == localPlayer))
                     { LogDebug(3, ConsoleColor.Red, $"Filtered c.1 - interactSelf.False OtherPlayer is the same as Player && is localplayer(me)"); continue; }
-                    if (!NDBConfig.othersInteractSelf && (otherPlayerInfo.Item1 == player.Item1) && !(otherPlayerInfo.Item1 == localPlayer)) 
+                    if (!NDBConfig.othersInteractSelf && (otherPlayerInfo.Item1 == player.Item1) && !(otherPlayerInfo.Item1 == localPlayer))
                     { LogDebug(3, ConsoleColor.Red, $"Filtered c.1 - othersInteractSelf.False OtherPlayer is the same as Player && Not localplayer(me)"); continue; }
 
 
                     if ((NDBConfig.onlyForMyBones && !includeAvatar && player.Item1 != localPlayer))
                     { LogDebug(3, ConsoleColor.Red, $"Filtered c.1 - onlyForMyBones.True Player is not localPlayer(me)"); continue; }
-                    
+
                     foreach (DynamicBone otherPlayerDynamicBone in otherPlayerInfo.Item3)
                     {
-                        bool includeBone = CheckIfBoneIncluded(otherPlayerInfo.Item6.Item2, otherPlayerDynamicBone);  
+                        bool includeBone = CheckIfBoneIncluded(otherPlayerInfo.Item6.Item2, otherPlayerDynamicBone);
                         try
                         {
                             LogDebug(3, ConsoleColor.DarkRed, $"1");
@@ -1602,7 +1559,7 @@ namespace DBMod
                             {
                                 bool includeCollider = CheckIfColliderIncluded(player.Item6.Item2, collider);
                                 LogDebug(3, ConsoleColor.DarkRed, $"2");
-                                if (NDBConfig.onlyHandColliders && !includeCollider && player.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.isHuman && !collider.Equals(null) && !collider.gameObject.Equals(null) && !(collider.transform.IsChildOf(player.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.LeftHand) ?? collider.transform) || collider.transform.IsChildOf(player.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.RightHand) ?? collider.transform) ))
+                                if (NDBConfig.onlyHandColliders && !includeCollider && player.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.isHuman && !collider.Equals(null) && !collider.gameObject.Equals(null) && !(collider.transform.IsChildOf(player.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.LeftHand) ?? collider.transform) || collider.transform.IsChildOf(player.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.RightHand) ?? collider.transform)))
                                 { LogDebug(3, ConsoleColor.Red, $"Filtered c.1 - onlyHandColliders.True Player's dbc is not on a hand"); continue; } // Added '?? collider.transform' as an attempt to stop an NRE if the model was human rigged, but missing hands
 
                                 AddColliderToBone(otherPlayerDynamicBone, collider, otherPlayerInfo.Item6.Item2, player.Item6.Item2);
@@ -1630,9 +1587,9 @@ namespace DBMod
                     if (NDBConfig.onlyForMeAndFriends && !includeAvatarOther && !otherPlayerInfo.Item5 && otherPlayerInfo.Item1 != localPlayer)
                     { LogDebug(3, ConsoleColor.Red, $"Filtered c.2  - onlyForMeAndFriends.True OtherPlayer is not a friend & Not localplayer(me)"); continue; }
 
-                    if (!NDBConfig.interactSelf && (otherPlayerInfo.Item1 == player.Item1) && (otherPlayerInfo.Item1 == localPlayer)) 
+                    if (!NDBConfig.interactSelf && (otherPlayerInfo.Item1 == player.Item1) && (otherPlayerInfo.Item1 == localPlayer))
                     { LogDebug(3, ConsoleColor.Red, $"Filtered c.2 - interactSelf.False OtherPlayer is the same as Player && is localplayer(me)"); continue; }
-                    if (!NDBConfig.othersInteractSelf && (otherPlayerInfo.Item1 == player.Item1) && !(otherPlayerInfo.Item1 == localPlayer)) 
+                    if (!NDBConfig.othersInteractSelf && (otherPlayerInfo.Item1 == player.Item1) && !(otherPlayerInfo.Item1 == localPlayer))
                     { LogDebug(3, ConsoleColor.Red, $"Filtered c.2 - othersInteractSelf.False OtherPlayer is the same as Player && Not localplayer(me)"); continue; }
 
                     if ((NDBConfig.onlyForMyBones && !includeAvatarOther && otherPlayerInfo.Item1 != localPlayer))
@@ -1644,7 +1601,7 @@ namespace DBMod
                         try
                         {
                             LogDebug(3, ConsoleColor.DarkRed, $"2.2");
-                            if (NDBConfig.onlyHandColliders && !includeCollider && otherPlayerInfo.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.isHuman && !otherCollider.Equals(null) && !otherCollider.gameObject.Equals(null) && !(otherCollider.transform.IsChildOf(otherPlayerInfo.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.LeftHand) ?? otherCollider.transform) || otherCollider.transform.IsChildOf(otherPlayerInfo.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.RightHand) ?? otherCollider.transform) ))
+                            if (NDBConfig.onlyHandColliders && !includeCollider && otherPlayerInfo.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.isHuman && !otherCollider.Equals(null) && !otherCollider.gameObject.Equals(null) && !(otherCollider.transform.IsChildOf(otherPlayerInfo.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.LeftHand) ?? otherCollider.transform) || otherCollider.transform.IsChildOf(otherPlayerInfo.Item1.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.RightHand) ?? otherCollider.transform)))
                             { LogDebug(3, ConsoleColor.Red, $"Filtered c.2  - onlyHandColliders.True OtherPlayer's dbc is not on a hand"); continue; }
 
                             foreach (DynamicBone dynamicBone in player.Item3)
@@ -1671,7 +1628,7 @@ namespace DBMod
             if (NDBConfig.logLevel >= 3) PrintBonesSpecific();
         }
 
-        private bool CheckIfBoneIncluded(string hashAvatar, DynamicBone bone) 
+        private bool CheckIfBoneIncluded(string hashAvatar, DynamicBone bone)
         {
             bool includeBone = false;
             if (!NDBConfig.includeSpecificBones) return includeBone;
@@ -1769,7 +1726,7 @@ namespace DBMod
                     if (NDBConfig.logLevel >= 2) MelonLogger.Msg(ConsoleColor.Red, $"Collider is an inside collider and will filtered from being multiplayer'd- avatar:{colliderOwner}, collider name:{collider.name}");
                     return;
                 }
-                if (collider.Equals(null) || collider.transform.Equals(null)) return; 
+                if (collider.Equals(null) || collider.transform.Equals(null)) return;
                 float localscale = ((collider.transform.lossyScale.x + collider.transform.lossyScale.y + collider.transform.lossyScale.z) / 3);
 
                 if ((collider.m_Radius * localscale) > NDBConfig.colliderSizeLimit || (collider.m_Height * localscale) > NDBConfig.colliderSizeLimit)
@@ -1793,18 +1750,18 @@ namespace DBMod
                 {
 
                     if (!avatar.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.isHuman)
-                    { if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar {avatarHash} was tagged to get colliders added to it's hands but aborted: Avatar is not Human rigged"); return;}
+                    { if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar {avatarHash} was tagged to get colliders added to it's hands but aborted: Avatar is not Human rigged"); return; }
 
                     Transform lefthand = avatar.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.LeftHand);
                     Transform righthand = avatar.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.RightHand);
                     if (righthand is null || lefthand is null)
-                    { if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar {avatarHash} was tagged to get colliders added to it's hands but aborted: Missing one or more hands"); return;}
+                    { if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar {avatarHash} was tagged to get colliders added to it's hands but aborted: Missing one or more hands"); return; }
 
                     if (lefthand.childCount == 0 || righthand.childCount == 0)
-                    { if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar {avatarHash} was tagged to get colliders added to it's hands but aborted: Hands do not have child bones"); return;}
+                    { if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar {avatarHash} was tagged to get colliders added to it's hands but aborted: Hands do not have child bones"); return; }
                     if (lefthand.gameObject.GetComponentInChildren<DynamicBoneCollider>() != null || righthand.gameObject.GetComponent<DynamicBoneCollider>() != null)
-                    { if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar {avatarHash} was tagged to get colliders added to it's hands but aborted: Hands already have DBC(s)"); return;}
-                    
+                    { if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar {avatarHash} was tagged to get colliders added to it's hands but aborted: Hands already have DBC(s)"); return; }
+
                     List<float> leftDistances = new List<float>(); //Find the hand size by checking average distance from hand bone to the first childern that are fingers
                     for (int i = 0; i < lefthand.childCount; i++)
                     {
@@ -1813,7 +1770,7 @@ namespace DBMod
                             lefthand.GetChild(i) == lefthand.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.LeftMiddleProximal) ||
                             lefthand.GetChild(i) == lefthand.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.LeftRingProximal) ||
                             lefthand.GetChild(i) == lefthand.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.LeftLittleProximal))
-                        { leftDistances.Add(Vector3.Distance(lefthand.position, lefthand.GetChild(i).position));}
+                        { leftDistances.Add(Vector3.Distance(lefthand.position, lefthand.GetChild(i).position)); }
                     }
                     List<float> rightDistances = new List<float>();
                     for (int i = 0; i < righthand.childCount; i++)
@@ -1822,11 +1779,11 @@ namespace DBMod
                             righthand.GetChild(i) == righthand.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.RightIndexProximal) ||
                             righthand.GetChild(i) == righthand.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.RightMiddleProximal) ||
                             righthand.GetChild(i) == righthand.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.RightRingProximal) ||
-                            righthand.GetChild(i) == righthand.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.RightLittleProximal) )
+                            righthand.GetChild(i) == righthand.transform.root.GetComponentInChildren<VRCPlayer>().field_Internal_Animator_0.GetBoneTransform(HumanBodyBones.RightLittleProximal))
                         { rightDistances.Add(Vector3.Distance(righthand.position, righthand.GetChild(i).position)); }
                     }
 
-                    if (leftDistances.Count == 0 || rightDistances.Count == 0) 
+                    if (leftDistances.Count == 0 || rightDistances.Count == 0)
                     {
                         if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar {avatarHash} was tagged to get colliders added to it's hands but aborted: Hands have no fingers"); return;
                     }
@@ -1834,7 +1791,7 @@ namespace DBMod
                     float rightlocalscale = ((righthand.transform.lossyScale.x + righthand.transform.lossyScale.y + righthand.transform.lossyScale.z) / 3);
 
                     lefthand.gameObject.AddComponent<DynamicBoneCollider>().m_Radius = leftDistances.Average() / leftlocalscale;
-                    righthand.gameObject.AddComponent<DynamicBoneCollider>().m_Radius = rightDistances.Average() / rightlocalscale; 
+                    righthand.gameObject.AddComponent<DynamicBoneCollider>().m_Radius = rightDistances.Average() / rightlocalscale;
 
                     if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Added Hand Collider to avatar {avatarHash}. Left size: {lefthand.gameObject.GetComponent<DynamicBoneCollider>().m_Radius * leftlocalscale}, Right size: {righthand.gameObject.GetComponent<DynamicBoneCollider>().m_Radius * rightlocalscale}");
                 }
@@ -1842,7 +1799,7 @@ namespace DBMod
             catch (System.Exception ex) { MelonLogger.Msg(ConsoleColor.Red, ex.ToString()); };
         }
 
-      
+
         private void AddDynamicBonesToVisibilityList(string player, DynamicBone[] dynamicBones, Renderer renderer)
         {
             //Removing bones that were not enabled by default from being modified by the Visibility list 
@@ -1854,7 +1811,7 @@ namespace DBMod
             }
             DynamicBone[] enabledDBs = enabledList.ToArray();
             avatarRenderers.Add(player, new System.Tuple<Renderer, DynamicBone[]>(renderer, enabledDBs));
-         }
+        }
 
         private void RemoveDynamicBonesFromVisibilityList(string player)
         {
@@ -1867,7 +1824,7 @@ namespace DBMod
         {
             if (avatarRenderers != null)
             {
-                if (avatarRenderers.Count != 0 && NDBConfig.enableBoundsCheck ) EnableIfVisible();
+                if (avatarRenderers.Count != 0 && NDBConfig.enableBoundsCheck) EnableIfVisible();
             }
 
             if (!NDBConfig.keybindsEnabled) return;
@@ -2130,7 +2087,7 @@ namespace DBMod
                 }
 
                 GUILayout.EndScrollView();
-                if (GUI.changed)
+                if (GUI.changed && nextEditorUpdate < Time.time)
                 {
                     foreach (DynamicBone db in localPlayer.GetComponentsInChildren<DynamicBone>(true))
                     {
@@ -2142,6 +2099,7 @@ namespace DBMod
 
                         MelonLogger.Msg(ConsoleColor.DarkGreen, $"Updated setting for bone {db.m_Root.name}");
                     }
+                    nextEditorUpdate = Time.time + 1f;
                 }
 
 
@@ -2229,14 +2187,14 @@ namespace DBMod
                 }).Do((info) => ogInfo.Add(info));
             }
             originalSettings.Add(name, ogInfo);
-            MelonLogger.Msg(ConsoleColor.DarkGreen, $"Saved original dynamic bone info of player {name}");
+            if (NDBConfig.logLevel >= 0) MelonLogger.Msg(ConsoleColor.DarkGreen, $"Saved original dynamic bone info of player {name}");
         }
 
         private void RestoreOriginalColliderList()
         {
             foreach (KeyValuePair<string, Tuple<GameObject, bool, DynamicBone[], DynamicBoneCollider[], bool, System.Tuple<string, string, float>>> player in avatarsInScene) //Foreach player
             {
-                MelonLogger.Msg(ConsoleColor.DarkBlue, $"Restoring original settings for player {player.Key}"); 
+                if (NDBConfig.logLevel >= 0) MelonLogger.Msg(ConsoleColor.DarkBlue, $"Restoring original settings for player {player.Key}");
                 foreach (DynamicBone db in player.Value.Item3) //Foreach bone in player avatar
                 {
                     if (originalSettings.TryGetValue(player.Key, out List<OriginalBoneInformation> origList)) //Gets previous info for player
@@ -2249,7 +2207,7 @@ namespace DBMod
                                 origData.colliders.ForEach((dbc) => db.m_Colliders.Add(dbc));
                                 db.m_DistanceToObject = origData.distanceToDisable;
                                 db.field_Private_Single_4 = origData.updateRate;
-                                db.m_UpdateRate = origData.updateRate; 
+                                db.m_UpdateRate = origData.updateRate;
                                 db.m_DistantDisable = origData.distantDisable;
                                 db.m_Elasticity = origData.Elasticity;
                                 db.m_Stiffness = origData.Stiffness;
@@ -2284,7 +2242,7 @@ namespace DBMod
     }
 
 
-        public static class ListExtensions
+    public static class ListExtensions
     {
         public static T[] ToArrayExtension<T>(this Il2CppSystem.Collections.Generic.List<T> list)
         {
@@ -2301,11 +2259,11 @@ namespace DBMod
 
 namespace UIExpansionKit.API
 {
-  
+
     public struct LayoutDescriptionCustom
     {
         public static LayoutDescription QuickMenu1Column = new LayoutDescription { NumColumns = 1, RowHeight = 40, NumRows = 11 };
         public static LayoutDescription QuickMenu3Column = new LayoutDescription { NumColumns = 3, RowHeight = 115, NumRows = 4 }; //Default height is 95
-        public static LayoutDescription QuickMenu1Column11Row = new LayoutDescription { NumColumns = 1, RowHeight = 444/12, NumRows = 12 };
+        public static LayoutDescription QuickMenu1Column11Row = new LayoutDescription { NumColumns = 1, RowHeight = 444 / 12, NumRows = 12 };
     }
 }
