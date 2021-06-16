@@ -1,5 +1,5 @@
 using ExternalDynamicBoneEditor.IPCSupport;
-using Harmony;
+using HarmonyLib;
 using MelonLoader;
 using System;
 using System.Collections.Generic;
@@ -35,7 +35,7 @@ namespace DBMod
         public NDB()
         { LoaderIntegrityCheck.CheckIntegrity(); }
 
-        public const string VERSION_STR = "1041";
+        public const string VERSION_STR = "1041.1";
 
         private static class NDBConfig
         {
@@ -120,9 +120,9 @@ namespace DBMod
         private (MethodBase, MethodBase) reloadDynamicBoneParamInternalFuncs;
 
         //private static AvatarInstantiatedDelegate onAvatarInstantiatedDelegate;
-        private static HarmonyInstance harmonyInstance;
-        private static DynamicMethod onJoinedRoomPatch;
-        private static DynamicMethod onAvatarInstantiatedPatch;
+        //private static HarmonyInstance harmonyInstance;
+        private static MethodInfo onJoinedRoomPatch;
+        private static MethodInfo onAvatarInstantiatedPatch;
 
         public static HashSet<string> bonesExcluded = new HashSet<string>();
         public static HashSet<string> collidersExcluded = new HashSet<string>();
@@ -729,7 +729,7 @@ namespace DBMod
             bool isPlayerEventAdded2 = false;
             try
             {
-                harmonyInstance = HarmonyInstance.Create("NDB");
+                //harmonyInstance = HarmonyInstance.Create("NDB");
 
                 //IntPtr funcToHook = (IntPtr)typeof(VRCAvatarManager.MulticastDelegateNPublicSealedVoGaVRBoUnique).GetField("NativeMethodInfoPtr_Invoke_Public_Virtual_New_Void_GameObject_VRC_AvatarDescriptor_Boolean_0", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
                 //Hook(funcToHook, new System.Action<IntPtr, IntPtr, IntPtr, bool>(OnAvatarInstantiated).Method.MethodHandle.GetFunctionPointer());
@@ -737,10 +737,10 @@ namespace DBMod
                 //MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedDelegate != null) ? "Yes!" : "No: critical error!!")}");
 
                 MethodBase funcToHook = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Private_Void_GameObject_VRC_AvatarDescriptor_Boolean_") && !Xref.CheckMethod(mi, "Avatar is Ready, Initializing")); //Thanks to https://github.com/loukylor/VRC-Mods/blob/7b0663da72b775ea5018ec546f914a5fc06b0013/PlayerList/Utilities/NetworkEvents.cs#L84
-                onAvatarInstantiatedPatch = harmonyInstance.Patch(funcToHook, null, new HarmonyMethod(typeof(NDB).GetMethod(nameof(OnAvatarInstantiated), BindingFlags.NonPublic | BindingFlags.Static)));
+                onAvatarInstantiatedPatch = HarmonyInstance.Patch(funcToHook, null, new HarmonyMethod(typeof(NDB).GetMethod(nameof(OnAvatarInstantiated), BindingFlags.NonPublic | BindingFlags.Static)));
                 MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedPatch != null) ? "Yes!" : "No: critical error!!")}");
 
-                onJoinedRoomPatch = harmonyInstance.Patch(typeof(NetworkManager).GetMethods().Single((fi) => fi.Name.Contains("OnJoinedRoom")), new HarmonyMethod(typeof(NDB).GetMethod(nameof(Reset))));
+                onJoinedRoomPatch = HarmonyInstance.Patch(typeof(NetworkManager).GetMethods().Single((fi) => fi.Name.Contains("OnJoinedRoom")), new HarmonyMethod(typeof(NDB).GetMethod(nameof(Reset))));
                 MelonLogger.Msg(ConsoleColor.Blue, $"Patched OnJoinedRoom? {((onJoinedRoomPatch != null) ? "Yes!" : "No: critical error!!")}");
 
                 AddToDelegate(NetworkManager.field_Internal_Static_NetworkManager_0.field_Internal_VRCEventDelegate_1_Player_0, EventA);
@@ -751,6 +751,7 @@ namespace DBMod
                 isPlayerEventAdded2 = true;
                 MelonLogger.Msg(ConsoleColor.Blue, $"Added Delegate for Player Event (2/2)? {((isPlayerEventAdded2) ? "Yes!" : "No: critical error!!")}");
             }
+            catch (Exception ex) { MelonLogger.Error(ex.ToString()); return; }
             finally
             {
                 if (onAvatarInstantiatedPatch == null || onJoinedRoomPatch == null || !isPlayerEventAdded1 || !isPlayerEventAdded2)
@@ -1314,7 +1315,7 @@ namespace DBMod
                                 try
                                 {
                                     if (mesh is null || mesh.Equals(null)) continue;
-                                    if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.DarkMagenta, $"Mesh - {mesh.name}, Size - {mesh.bounds.size.magnitude}, Enabled - {mesh.enabled}, Active - {mesh.gameObject.active} ");
+                                    if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.DarkMagenta, $"Mesh - {mesh.name}, Size - {mesh.bounds.size.magnitude.ToString("F5").TrimEnd('0')}, Enabled - {mesh.enabled}, Active - {mesh.gameObject.active} ");
                                     if (mesh.bounds.size.magnitude > meshSize && mesh.enabled == true && mesh.gameObject.active == true)
                                     {
                                         meshSize = mesh.bounds.size.magnitude;
@@ -1323,7 +1324,7 @@ namespace DBMod
                                 }
                                 catch (System.Exception ex) { MelonLogger.Msg(ConsoleColor.DarkRed, $"Error in visMesh\n" + ex.ToString()); }
                             }
-                            if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Largest mesh - {visMesh.name}  is {visMesh.bounds.size.magnitude} ");
+                            if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Largest mesh - {visMesh.name}  is {visMesh.bounds.size.magnitude.ToString("F5").TrimEnd('0')} ");
                         }
                         catch (System.Exception ex) { MelonLogger.Msg(ConsoleColor.DarkRed, $"Error in meshes foreach\n" + ex.ToString()); }
                     }
@@ -1399,7 +1400,7 @@ namespace DBMod
                 bone.m_DistanceToObject = NDBConfig.distanceToDisable;
                 bone.field_Private_Single_4 = NDBConfig.dynamicBoneUpdateRate; // This appears to drive m_UpdateRate - is m_BaseUpdateRate
                 bone.m_UpdateRate = NDBConfig.dynamicBoneUpdateRate; //Setting both values should make the UpdateRate match instantly, otherwise if lower then default, it will slowly skew to the new UpdateRate
-                bone.m_ReferenceObject = localPlayer?.transform ?? bone.m_ReferenceObject;
+                if (!localPlayer.transform.Equals(null) && localPlayer.transform != null) bone.m_ReferenceObject = localPlayer.transform; //= localPlayer?.transform ?? bone.m_ReferenceObject;
 
                 if (!NDBConfig.onlyOptimize) ApplyDBRadius(bone, avatarHash); //Dont adjust radius if we aren't multiplayering 
                 ApplyBoneChanges(bone);
@@ -1431,7 +1432,7 @@ namespace DBMod
                         orgRad = origData.Radius;
                     });
 
-                    if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Bone Legnth {boneTotalLength.ToString("F99").TrimEnd('0')}, scale {scale.ToString("F99").TrimEnd('0')}, orig rad {orgRad.ToString("F99").TrimEnd('0')}");
+                    if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Bone Legnth {boneTotalLength.ToString("F5").TrimEnd('0')}, scale {scale.ToString("F5").TrimEnd('0')}, orig rad {orgRad.ToString("F5").TrimEnd('0')}");
 
                     if (adj == 0 || adj == -1) //Replacing length with calculated one
                     {
@@ -1446,13 +1447,13 @@ namespace DBMod
                             float distance2 = Vector3.Distance(bone.m_Root.transform.position, bone.m_Root.transform.GetChild(0).position);
 
                             distance = Math.Max(distance1, distance2);
-                            if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"dist1: {distance1.ToString("F99").TrimEnd('0')} (length {boneTotalLength.ToString("F99").TrimEnd('0')}/depth {depth.ToString("F99").TrimEnd('0')}, dist2 {distance2.ToString("F99").TrimEnd('0')}, Max {distance.ToString("F99").TrimEnd('0')}");
+                            if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"dist1: {distance1.ToString("F5").TrimEnd('0')} (length {boneTotalLength.ToString("F5").TrimEnd('0')}/depth {depth.ToString("F5").TrimEnd('0')}, dist2 {distance2.ToString("F5").TrimEnd('0')}, Max {distance.ToString("F5").TrimEnd('0')}");
                             bone.m_Radius = (distance / NDBConfig.boneRadiusDivisor) / scale;
                         }
 
                         if (bone.m_Radius == 0) bone.m_Radius = NDBConfig.endBoneRadius / scale; //If 0 still, set default
 
-                        if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.DarkYellow, $"DB Radius replaced for avatar {avatarHash}, Bone {bone.m_Root.name}, Was: {(orgRad * scale).ToString("F99").TrimEnd('0')}, Now: {(bone.m_Radius * scale).ToString("F99").TrimEnd('0')}");
+                        if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.DarkYellow, $"DB Radius replaced for avatar {avatarHash}, Bone {bone.m_Root.name}, Was: {(orgRad * scale).ToString("F5").TrimEnd('0')}, Now: {(bone.m_Radius * scale).ToString("F5").TrimEnd('0')}");
                     }
                     else if (orgRad != -1)//Multiply existing radius
                     {
@@ -1460,7 +1461,7 @@ namespace DBMod
                         bone.m_Radius *= radMuti;
 
                         if (orgRad == 0) bone.m_Radius = NDBConfig.endBoneRadius / scale; //If 0 still, set default
-                        if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.DarkYellow, $"DB Radius adjusted for avatar {avatarHash}, Bone {bone.m_Root.name}, Was: {(orgRad * scale).ToString("F99").TrimEnd('0')}, Now: {(bone.m_Radius * scale).ToString("F99").TrimEnd('0')}, Multi: {radMuti}");
+                        if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.DarkYellow, $"DB Radius adjusted for avatar {avatarHash}, Bone {bone.m_Root.name}, Was: {(orgRad * scale).ToString("F5").TrimEnd('0')}, Now: {(bone.m_Radius * scale).ToString("F5").TrimEnd('0')}, Multi: {radMuti}");
                     }
                     else if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Red, $"DB Radius was tagged to be adjusted but was aborted. Was not set to replace, and could not find org radius to be multiplied.");
 
@@ -1793,7 +1794,7 @@ namespace DBMod
                     lefthand.gameObject.AddComponent<DynamicBoneCollider>().m_Radius = leftDistances.Average() / leftlocalscale;
                     righthand.gameObject.AddComponent<DynamicBoneCollider>().m_Radius = rightDistances.Average() / rightlocalscale;
 
-                    if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Added Hand Collider to avatar {avatarHash}. Left size: {lefthand.gameObject.GetComponent<DynamicBoneCollider>().m_Radius * leftlocalscale}, Right size: {righthand.gameObject.GetComponent<DynamicBoneCollider>().m_Radius * rightlocalscale}");
+                    if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Added Hand Collider to avatar {avatarHash}. Left size: {(lefthand.gameObject.GetComponent<DynamicBoneCollider>().m_Radius * leftlocalscale).ToString("F5").TrimEnd('0')}, Right size: {(righthand.gameObject.GetComponent<DynamicBoneCollider>().m_Radius * rightlocalscale).ToString("F5").TrimEnd('0')}");
                 }
             }
             catch (System.Exception ex) { MelonLogger.Msg(ConsoleColor.Red, ex.ToString()); };

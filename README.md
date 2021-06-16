@@ -70,6 +70,10 @@ Or from **MDB Settings** on the Quick Menu
 
 
 ## __Changelog:__
+* Build 1041.1
+	* Melonloader 0.4.0 Compatibility 
+	* Adjusted the formatting in some debug messages 
+	* Maybe fixed rare NRE caused by ApplyBoneSettings
 * Build 1041
 	* Added a 'Silent Mode' Log Level, this removes the join/leave/swap avatar messages from your log
 	* Redid Hooks for RubyClient Compatibility - Thanks DubyaDude
