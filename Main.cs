@@ -26,6 +26,7 @@ using VRC.Core;
 using ConsoleColor = System.ConsoleColor;
 using IntPtr = System.IntPtr;
 using UIExpansionKit.API;
+using System.Reflection.Emit;
 
 namespace DBMod
 {
@@ -115,8 +116,8 @@ namespace DBMod
         private (MethodBase, MethodBase) reloadDynamicBoneParamInternalFuncs;
 
         private static AvatarInstantiatedDelegate onAvatarInstantiatedDelegate;
-        private static PlayerLeftDelegate onPlayerLeftDelegate;
-        private static JoinedRoom onJoinedRoom;
+        private static HarmonyInstance harmonyInstance;
+        private static DynamicMethod onJoinedRoomPatch;
 
         public static HashSet<string> bonesExcluded = new HashSet<string>();
         public static HashSet<string> collidersExcluded = new HashSet<string>();
@@ -204,8 +205,6 @@ namespace DBMod
 
 
         private delegate void AvatarInstantiatedDelegate(IntPtr @this, IntPtr avatarPtr, IntPtr avatarDescriptorPtr, bool loaded);
-        private delegate void PlayerLeftDelegate(IntPtr @this, IntPtr playerPtr);
-        private delegate void JoinedRoom(IntPtr @this);
 
 
 
@@ -240,7 +239,7 @@ namespace DBMod
 
 
 
-            HookCallbackFunctions();
+            //HookCallbackFunctions();
 
             //to forcefully disable the limit
             PlayerPrefs.SetInt("VRC_LIMIT_DYNAMIC_BONE_USAGE", 0);
@@ -771,29 +770,41 @@ namespace DBMod
             MelonPreferences.CreateEntry<string>("NDB", "CollidersToInclude", "", null, true);
         }
 
+        private static int scenesLoaded;
+        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        {
+            scenesLoaded++;
+            if (scenesLoaded == 2)
+                HookCallbackFunctions();
+        }
+
         private unsafe void HookCallbackFunctions()
         {
+            bool isPlayerEventAdded1 = false;
+            bool isPlayerEventAdded2 = false;
             try
             {
-                IntPtr funcToHook = (IntPtr)typeof(VRCAvatarManager.MulticastDelegateNPublicSealedVoGaVRBoUnique).GetField("NativeMethodInfoPtr_Invoke_Public_Virtual_New_Void_GameObject_VRC_AvatarDescriptor_Boolean_0", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+                harmonyInstance = HarmonyInstance.Create("NDB");
 
+                IntPtr funcToHook = (IntPtr)typeof(VRCAvatarManager.MulticastDelegateNPublicSealedVoGaVRBoUnique).GetField("NativeMethodInfoPtr_Invoke_Public_Virtual_New_Void_GameObject_VRC_AvatarDescriptor_Boolean_0", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
                 Hook(funcToHook, new System.Action<IntPtr, IntPtr, IntPtr, bool>(OnAvatarInstantiated).Method.MethodHandle.GetFunctionPointer());
                 onAvatarInstantiatedDelegate = Marshal.GetDelegateForFunctionPointer<AvatarInstantiatedDelegate>(*(IntPtr*)funcToHook);
                 MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedDelegate != null) ? "Yes!" : "No: critical error!!")}");
 
-                funcToHook = (IntPtr)typeof(NetworkManager).GetField("NativeMethodInfoPtr_Method_Public_Void_Player_1", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
-                Hook(funcToHook, new System.Action<IntPtr, IntPtr>(OnPlayerLeft).Method.MethodHandle.GetFunctionPointer());
-                onPlayerLeftDelegate = Marshal.GetDelegateForFunctionPointer<PlayerLeftDelegate>(*(IntPtr*)funcToHook);
-                MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnPlayerLeft? {((onPlayerLeftDelegate != null) ? "Yes!" : "No: critical error!!")}");
+                onJoinedRoomPatch = harmonyInstance.Patch(typeof(NetworkManager).GetMethods().Single((fi) => fi.Name.Contains("OnJoinedRoom")), new HarmonyMethod(typeof(NDB).GetMethod(nameof(Reset))));
+                MelonLogger.Msg(ConsoleColor.Blue, $"Patched OnJoinedRoom? {((onJoinedRoomPatch != null) ? "Yes!" : "No: critical error!!")}");
 
-                funcToHook = (IntPtr)typeof(NetworkManager).GetFields(BindingFlags.NonPublic | BindingFlags.Static).Single((fi) => fi.Name.Contains("OnJoinedRoom")).GetValue(null);
-                Hook(funcToHook, new System.Action<IntPtr>(OnJoinedRoom).Method.MethodHandle.GetFunctionPointer());
-                onJoinedRoom = Marshal.GetDelegateForFunctionPointer<JoinedRoom>(*(IntPtr*)funcToHook);
-                MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnJoinedRoom? {((onJoinedRoom != null) ? "Yes!" : "No: critical error!!")}");
+                AddToDelegate(NetworkManager.field_Internal_Static_NetworkManager_0.field_Internal_VRCEventDelegate_1_Player_0, EventA);
+                isPlayerEventAdded1 = true;
+                MelonLogger.Msg(ConsoleColor.Blue, $"Added Delegate for Player Event (1/2)? {((isPlayerEventAdded1) ? "Yes!" : "No: critical error!!")}");
+
+                AddToDelegate(NetworkManager.field_Internal_Static_NetworkManager_0.field_Internal_VRCEventDelegate_1_Player_1, EventB);
+                isPlayerEventAdded2 = true;
+                MelonLogger.Msg(ConsoleColor.Blue, $"Added Delegate for Player Event (2/2)? {((isPlayerEventAdded2) ? "Yes!" : "No: critical error!!")}");
             }
             finally
             {
-                if (onPlayerLeftDelegate == null || onAvatarInstantiatedDelegate == null || onJoinedRoom == null)
+                if (onAvatarInstantiatedDelegate == null || onJoinedRoomPatch == null || !isPlayerEventAdded1 || !isPlayerEventAdded2)
                 {
                     this.enabled = false;
                     MelonLogger.Msg(ConsoleColor.Red, "Multiplayer Dynamic Bones mod suffered a critical error! Mod version may be obsolete.");
@@ -802,6 +813,58 @@ namespace DBMod
             MelonLogger.Msg(ConsoleColor.Green, $"NDBMod is {((enabled == true) ? "enabled" : "disabled")}");
         }
 
+        private static void AddToDelegate(VRCEventDelegate<Player> theDelegate, Action<Player> theEvent)
+        {
+            theDelegate.field_Private_HashSet_1_UnityAction_1_T_0.Add(theEvent);
+        }
+
+
+        private enum SeenFirst
+        {
+            None,
+            A,
+            B
+        }
+
+        private static SeenFirst seenFirst = SeenFirst.None;
+
+        public static void EventA(Player player)
+        {
+            if (seenFirst == SeenFirst.None)
+                seenFirst = SeenFirst.A;
+
+            if (player == null)
+                return;
+
+            if (seenFirst == SeenFirst.A)
+                OnPlayerJoin(player);
+            else
+                OnPlayerLeave(player);
+        }
+
+        public static void EventB(Player player)
+        {
+            if (seenFirst == SeenFirst.None)
+                seenFirst = SeenFirst.B;
+
+            if (player == null)
+                return;
+
+            if (seenFirst == SeenFirst.B)
+                OnPlayerJoin(player);
+            else
+                OnPlayerLeave(player);
+        }
+
+        private static void OnPlayerJoin(Player player)
+        {
+            //MelonLogger.Msg(ConsoleColor.Blue, $"{player.prop_APIUser_0?.displayName} Joined");
+        }
+        private static void OnPlayerLeave(Player player)
+        {
+            //MelonLogger.Msg(ConsoleColor.Blue, $"{player.prop_APIUser_0?.displayName} Left");
+            OnPlayerLeft(player);
+        }
 
         public void LogLevelWarning()
         {
@@ -1061,8 +1124,7 @@ namespace DBMod
         }
 
 
-
-        private static void OnJoinedRoom(IntPtr @this)
+        public static bool Reset()
         {
             try
             {
@@ -1077,7 +1139,6 @@ namespace DBMod
 
                 moarbonesCount = 0;
 
-                onJoinedRoom(@this);
                 //Console.WriteLine("ONJOINEDROOM PAST-CALLBACK");
                 MelonLogger.Msg(ConsoleColor.Blue, "New scene loaded; reset");
                 //Console.WriteLine("ONJOINEDROOM SUCCESS");
@@ -1086,23 +1147,20 @@ namespace DBMod
             {
                 MelonLogger.Error(e.ToString());
             }
+            return true;
         }
 
-        private static void OnPlayerLeft(IntPtr @this, IntPtr playerPtr)
+        private static void OnPlayerLeft(Player player)
         {
-            Player player = new Player(playerPtr);
-
             if (player.transform.root.gameObject.name.Contains("[Local]"))
             {
                 if (NDBConfig.logLevel >= 2) MelonLogger.Msg(ConsoleColor.Red, $"OnPlayerLeft: Not removing local player info");
-                onPlayerLeftDelegate(@this, playerPtr);
                 return;
             }
 
             if (!_Instance.avatarsInScene.ContainsKey(player._vrcplayer.prop_String_0) && !_Instance.originalSettings.ContainsKey(player._vrcplayer.prop_String_0))
             {
                 if (NDBConfig.logLevel >= 2) MelonLogger.Msg(ConsoleColor.Red, $"OnPlayerLeft: Just passing to onPlayerLeftDelegate");
-                onPlayerLeftDelegate(@this, playerPtr);
                 //Console.WriteLine("ONPLAYERLEFT PAST-CALLBACK");
                 return;
 
@@ -1113,7 +1171,6 @@ namespace DBMod
             _Instance.RemovePlayerFromDict(player._vrcplayer.prop_String_0);
             _Instance.RemoveDynamicBonesFromVisibilityList(player._vrcplayer.prop_String_0);
             MelonLogger.Msg(ConsoleColor.Blue, $"Player {player._vrcplayer.prop_String_0} left the room so all his dynamic bones info was deleted");
-            onPlayerLeftDelegate(@this, playerPtr);
             //Console.WriteLine("ONPLAYERLEFT SUCCESS");
         }
 
