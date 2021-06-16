@@ -99,7 +99,7 @@ namespace DBMod
                 if (MessageBox(IntPtr.Zero, "You're using MelonLoader with important security features missing. Do you want to download the official installer?", "Multiplayer Dynamic Bones Mod", 0x04 | 0x40 | 0x1000) == 6)
                 {
                     Process.Start("https://github.com/LavaGang/MelonLoader/releases");
-                    MessageBox(IntPtr.Zero, "Please close this console, and reinstall MelonLoader using the link on the page that just loaded.", "Multiplayer Dynamic Bones Mod", 0x40 | 0x1000);
+                    MessageBox(IntPtr.Zero, "Please close the game, and reinstall MelonLoader using the link on the page that just loaded.", "Multiplayer Dynamic Bones Mod", 0x40 | 0x1000);
                 }
             }
             catch (Exception ex) { MelonLogger.Error(ex.ToString()); return; }

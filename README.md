@@ -70,7 +70,12 @@ Or from **MDB Settings** on the Quick Menu
 
 
 ## __Changelog:__
-* Build 1040.1-5
+* Build 1041
+	* Added a 'Silent Mode' Log Level, this removes the join/leave/swap avatar messages from your log
+	* Redid Hooks for RubyClient Compatibility - Thanks DubyaDude
+	* Added the Loader Integrity Check
+	* In game editor now waits a second between updates
+* Build 1040.1-7
 	* Minor bug fixes for various VRC versions
 	* Added more description to MoarBones & MoarBones button is moar visible (Added to MDB Settings in Quick Menu)
 	* Fix 'Disable All Bones' not really working if Enable if Visible was enabled
@@ -164,7 +169,7 @@ __Known bugs:__
 
 __Todo:__ 
 * Look over the ingame editor.
-    * Still needs more testing and need to make it not apply changes every frame if you are dragging the slider 
+    * Still needs more testing and need to make it not apply changes every frame if you are dragging the slider - Now is every second
 * Make (require restart) options update live
 * In game visulzation of db and dbcs 
 
@@ -204,7 +209,7 @@ KeybindsEnabled | true | Enable keyboard actuation(F1, F4 and F8) | See above fo
 UpdateMode | 2 | A value of 2 will notify the user when a new version of the mod is available, while 1 will not.
 EnableEditor | false | EnableEditor (F5) | GUI for live editing of bones, may need some work? 
 QuickMenuButton | 1 | Quick Menu Button - 1:Settings Menu, 2:Just Toggle, 0:None (Restart Req) | Controls the state of the button that gets placed on your Quick Menu
-LogLevel | 0 | Console Logging Level: 0-Default, 1-Info, 2-Debug, 3-ExtraDebug(Very laggy) | Logging info if you really want it
+LogLevel | 0 | Console Logging Level: 0-Default, 1-Info, 2-Debug, 3-ExtraDebug(Very laggy), -1 Silent Mode | Logging info if you really want it
 MoarBones | false | MoarBones: I hear you like bones~
 MoarBonesPref | true | MoarBones: Performance Limit
 MoarBonesNotLocal | true | MoarBones: Don't effect local avatar | Enabled by default as the local avatar movements are networked
