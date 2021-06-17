@@ -70,6 +70,9 @@ Or from **MDB Settings** on the Quick Menu
 
 
 ## __Changelog:__
+* Build 1041.2
+	* VRC 1106 Compatibility 
+	* Fixed OnAvatarInstantiated Hook - Thanks loukylor for pointing at the right method
 * Build 1041.1
 	* Melonloader 0.4.0 Compatibility 
 	* Adjusted the formatting in some debug messages 
