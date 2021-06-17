@@ -35,7 +35,7 @@ namespace DBMod
         public NDB()
         { LoaderIntegrityCheck.CheckIntegrity(); }
 
-        public const string VERSION_STR = "1041.1";
+        public const string VERSION_STR = "1041.2";
 
         private static class NDBConfig
         {
@@ -736,7 +736,10 @@ namespace DBMod
                 //onAvatarInstantiatedDelegate = Marshal.GetDelegateForFunctionPointer<AvatarInstantiatedDelegate>(*(IntPtr*)funcToHook);
                 //MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedDelegate != null) ? "Yes!" : "No: critical error!!")}");
 
-                MethodBase funcToHook = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Private_Void_GameObject_VRC_AvatarDescriptor_Boolean_") && !Xref.CheckMethod(mi, "Avatar is Ready, Initializing")); //Thanks to https://github.com/loukylor/VRC-Mods/blob/7b0663da72b775ea5018ec546f914a5fc06b0013/PlayerList/Utilities/NetworkEvents.cs#L84
+                //MethodBase funcToHook = typeof(VRCAvatarManager.MulticastDelegateNPublicSealedVoGaVRBoUnique).GetMethods().First(mi => mi.Name.StartsWith("Invoke")); 
+                //MethodBase funcToHook = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Private_Void_GameObject_VRC_AvatarDescriptor_Boolean_") && !Xref.CheckMethod(mi, "Avatar is Ready, Initializing")); //Thanks to https://github.com/loukylor/VRC-Mods/blob/7b0663da72b775ea5018ec546f914a5fc06b0013/PlayerList/Utilities/NetworkEvents.cs#L84
+                //Above methods are always false
+                MethodBase funcToHook = typeof(VRCAvatarManager).GetMethods().First(mb => mb.Name.StartsWith("Method_Private_Void_ApiAvatar_GameObject_Action_1_Boolean_")); //Thanks to loukylor
                 onAvatarInstantiatedPatch = HarmonyInstance.Patch(funcToHook, null, new HarmonyMethod(typeof(NDB).GetMethod(nameof(OnAvatarInstantiated), BindingFlags.NonPublic | BindingFlags.Static)));
                 MelonLogger.Msg(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedPatch != null) ? "Yes!" : "No: critical error!!")}");
 
@@ -836,7 +839,10 @@ namespace DBMod
                 moarbonesCount = 0;
                 try
                 {// Reload All Avatar - Thanks loukylor - https://github.com/loukylor/VRC-Mods/blob/main/ReloadAvatars/ReloadAvatarsMod.cs
-                    VRCPlayer.field_Internal_Static_VRCPlayer_0.Method_Public_Void_Boolean_0(); //What does this do now? was Boolean_0 before Then Boolean_1, now back to 0
+                    //MethodInfo reloadAllAvatarsMethod = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Public_Void_Boolean_") && mi.Name.Length < 30 && mi.GetParameters().Any(pi => pi.HasDefaultValue ));// Both methods seem to do the same thing  - https://github.com/loukylor/VRC-Mods/blob/0e46ec6f5d3927514d6b0cc539bff6cfe57d187b/ReloadAvatars/ReloadAvatarsMod.cs#L27
+                    //reloadAllAvatarsMethod.Invoke(VRCPlayer.field_Internal_Static_VRCPlayer_0, new object[] { true });
+                    //Can't be bothered to figure out why the above doesn't work right now, just staticlly setting method again
+                    VRCPlayer.field_Internal_Static_VRCPlayer_0.Method_Public_Void_Boolean_1(); 
                 }
                 catch { MelonLogger.Msg(ConsoleColor.Red, "Failed to reload all avatars - You will have to rejoin the world - Check for a newer version of this mod or report this bug"); } // Ignore
             }
@@ -1132,20 +1138,18 @@ namespace DBMod
             //Console.WriteLine("ONPLAYERLEFT SUCCESS");
         }
 
-
-        private static void OnAvatarInstantiated(GameObject __0, VRC.SDKBase.VRC_AvatarDescriptor __1, bool __2)
+        private static void OnAvatarInstantiated(VRCAvatarManager __instance, GameObject __0, ref Il2CppSystem.Delegate __2)
         {
-            //Console.WriteLine("ONAVATARINSTANTIATED START");
+            //Console.WriteLine($"ONAVATARINSTANTIATED START");
             //onAvatarInstantiatedDelegate(@this, avatarPtr, avatarDescriptorPtr, loaded);
             //Console.WriteLine("ONAVATARINSTANTIATED PAST-CALLBACK");
 
             try
-            {
-                if (__2)
+            { 
+                if (__instance != null)
                 {
-                    GameObject avatar = __0;
+                    GameObject avatar = __instance.prop_GameObject_0;
                     //VRC.SDKBase.VRC_AvatarDescriptor avatarDescriptor = new VRC.SDKBase.VRC_AvatarDescriptor(avatarDescriptorPtr);
-
 
                     if (avatar.transform.root.gameObject.name.Contains("[Local]"))//Remove broken DB's on local avatar only? 
                     {
@@ -1157,9 +1161,7 @@ namespace DBMod
                         }
                         catch (Exception ex) { MelonLogger.Error(ex.ToString()); }
                     }
-
                     if (NDBConfig.moarBones) MelonCoroutines.Start(MoarBones(avatar));
-
                     float scaleArmature = 1f;
                     GameObject armature = GetChildObject("Armature", avatar); //Change to something better than just a named check?
                     if (armature != null)
@@ -1171,9 +1173,7 @@ namespace DBMod
                     string aviID = avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_ApiAvatar_0.id;
                     string aviHash = aviName.Substring(0, Math.Min(aviName.Length, 20)) + ":" + String.Format("{0:X}", aviID.GetHashCode()).Substring(4);
                     if (NDBConfig.logLevel >= 1) MelonLogger.Msg(ConsoleColor.Yellow, $"Avatar: {aviName}, ID: {aviID}");
-
                     AddAutoCollidersToPlayer(avatar, aviHash);
-
                     _Instance.AddOrReplaceWithCleanup(
                         avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_String_0,
                         new System.Tuple<GameObject, bool, DynamicBone[], DynamicBoneCollider[], bool, System.Tuple<string, string, float>>(
@@ -1188,8 +1188,6 @@ namespace DBMod
                             scaleArmature
                             )
                         ));
-
-
 
                     if (NDBConfig.logLevel >= 0) MelonLogger.Msg(ConsoleColor.Blue, "New avatar loaded, added to avatar list");
                     if (NDBConfig.logLevel >= 0) MelonLogger.Msg(ConsoleColor.Green, $"Added {avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_String_0}");
@@ -1401,7 +1399,6 @@ namespace DBMod
                 bone.field_Private_Single_4 = NDBConfig.dynamicBoneUpdateRate; // This appears to drive m_UpdateRate - is m_BaseUpdateRate
                 bone.m_UpdateRate = NDBConfig.dynamicBoneUpdateRate; //Setting both values should make the UpdateRate match instantly, otherwise if lower then default, it will slowly skew to the new UpdateRate
                 if (!localPlayer.transform.Equals(null) && localPlayer.transform != null) bone.m_ReferenceObject = localPlayer.transform; //= localPlayer?.transform ?? bone.m_ReferenceObject;
-
                 if (!NDBConfig.onlyOptimize) ApplyDBRadius(bone, avatarHash); //Dont adjust radius if we aren't multiplayering 
                 ApplyBoneChanges(bone);
             }
