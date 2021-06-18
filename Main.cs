@@ -35,7 +35,7 @@ namespace DBMod
         public NDB()
         { LoaderIntegrityCheck.CheckIntegrity(); }
 
-        public const string VERSION_STR = "1041.2";
+        public const string VERSION_STR = "1041.3";
 
         private static class NDBConfig
         {
@@ -838,11 +838,10 @@ namespace DBMod
                 MelonLogger.Msg(ConsoleColor.Magenta, "MoarBones State Changed, Reload All Avatars");
                 moarbonesCount = 0;
                 try
-                {// Reload All Avatar - Thanks loukylor - https://github.com/loukylor/VRC-Mods/blob/main/ReloadAvatars/ReloadAvatarsMod.cs
-                    //MethodInfo reloadAllAvatarsMethod = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Public_Void_Boolean_") && mi.Name.Length < 30 && mi.GetParameters().Any(pi => pi.HasDefaultValue ));// Both methods seem to do the same thing  - https://github.com/loukylor/VRC-Mods/blob/0e46ec6f5d3927514d6b0cc539bff6cfe57d187b/ReloadAvatars/ReloadAvatarsMod.cs#L27
-                    //reloadAllAvatarsMethod.Invoke(VRCPlayer.field_Internal_Static_VRCPlayer_0, new object[] { true });
-                    //Can't be bothered to figure out why the above doesn't work right now, just staticlly setting method again
-                    VRCPlayer.field_Internal_Static_VRCPlayer_0.Method_Public_Void_Boolean_1(); 
+                {   // Reload All Avatar - Thanks loukylor - https://github.com/loukylor/VRC-Mods/blob/main/ReloadAvatars/ReloadAvatarsMod.cs
+                    MethodInfo reloadAllAvatarsMethod = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Public_Void_Boolean_") && mi.Name.Length < 30 && mi.GetParameters().All(pi => pi.HasDefaultValue ));// Both methods seem to do the same thing
+                    reloadAllAvatarsMethod.Invoke(VRCPlayer.field_Internal_Static_VRCPlayer_0, new object[] { null });
+                    //VRCPlayer.field_Internal_Static_VRCPlayer_0.Method_Public_Void_Boolean_0(); 
                 }
                 catch { MelonLogger.Msg(ConsoleColor.Red, "Failed to reload all avatars - You will have to rejoin the world - Check for a newer version of this mod or report this bug"); } // Ignore
             }
