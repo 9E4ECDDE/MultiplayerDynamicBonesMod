@@ -70,6 +70,8 @@ Or from **MDB Settings** on the Quick Menu
 
 
 ## __Changelog:__
+* Build 1041.3
+	* VRC 1108 Compatibility - Fixed outdated method for reloading avatars and shouldn't break every other update now
 * Build 1041.2
 	* VRC 1106 Compatibility 
 	* Fixed OnAvatarInstantiated Hook - Thanks loukylor for pointing at the right method
