@@ -70,6 +70,8 @@ Or from **MDB Settings** on the Quick Menu
 
 
 ## __Changelog:__
+* Build 1041.4
+	* Fixes an error happens when using the Mod "Dynamic Bones Safety" and an NRE in ApplyBoneSettings that would happen when reloading all avatars. 
 * Build 1041.3
 	* VRC 1108 Compatibility - Fixed outdated method for reloading avatars and shouldn't break every other update now
 * Build 1041.2

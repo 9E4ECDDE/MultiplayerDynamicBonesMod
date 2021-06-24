@@ -35,7 +35,7 @@ namespace DBMod
         public NDB()
         { LoaderIntegrityCheck.CheckIntegrity(); }
 
-        public const string VERSION_STR = "1041.3";
+        public const string VERSION_STR = "1041.4";
 
         private static class NDBConfig
         {
@@ -1385,6 +1385,7 @@ namespace DBMod
         {
             try
             {
+                if (bone == null || bone.Equals(null)) return;
                 if (NDBConfig.dynamicBoneUpdateRate != bone.m_UpdateRate && NDBConfig.dynamicBoneUpdateRateAdjSettings)
                 {
                     if (NDBConfig.logLevel >= 2) MelonLogger.Msg(ConsoleColor.Magenta, $"Bone {bone.name}'s update rate of {bone.m_UpdateRate} doesn't match NDB config of {NDBConfig.dynamicBoneUpdateRate} - Applying settings changes");
@@ -1397,7 +1398,7 @@ namespace DBMod
                 bone.m_DistanceToObject = NDBConfig.distanceToDisable;
                 bone.field_Private_Single_4 = NDBConfig.dynamicBoneUpdateRate; // This appears to drive m_UpdateRate - is m_BaseUpdateRate
                 bone.m_UpdateRate = NDBConfig.dynamicBoneUpdateRate; //Setting both values should make the UpdateRate match instantly, otherwise if lower then default, it will slowly skew to the new UpdateRate
-                if (!localPlayer.transform.Equals(null) && localPlayer.transform != null) bone.m_ReferenceObject = localPlayer.transform; //= localPlayer?.transform ?? bone.m_ReferenceObject;
+                if (!localPlayer.Equals(null) && !localPlayer.transform.Equals(null)) bone.m_ReferenceObject = localPlayer.transform; //= localPlayer?.transform ?? bone.m_ReferenceObject;  //Null null null null
                 if (!NDBConfig.onlyOptimize) ApplyDBRadius(bone, avatarHash); //Dont adjust radius if we aren't multiplayering 
                 ApplyBoneChanges(bone);
             }
@@ -2118,6 +2119,7 @@ namespace DBMod
                     bool visible = go.Item1.isVisible;
                     foreach (DynamicBone db in go.Item2)
                     {
+                        if (db == null || db.Equals(null)) continue;
                         if (NDBConfig.logLevel >= 3) if (db.enabled != visible) MelonLogger.Msg(ConsoleColor.DarkBlue, $"{db.gameObject.name} is now {((visible) ? "enabled" : "disabled")}");
                         db.enabled = visible;
                     }
