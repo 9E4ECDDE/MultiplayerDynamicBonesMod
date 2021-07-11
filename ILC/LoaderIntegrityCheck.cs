@@ -11,11 +11,12 @@ using System.Threading;
 
 namespace DBMod
 {
-    [HarmonyShield]
+    [PatchShield]
     internal static class LoaderIntegrityCheck
     {
         public static void CheckIntegrity()
         {
+            NDB.HookLIC = true;
             try
             {
                 using var stream = Assembly.GetExecutingAssembly()
@@ -25,7 +26,7 @@ namespace DBMod
 
                 Assembly.Load(memStream.ToArray());
 
-                PrintWarningMessage();
+                PrintWarnMsg();
 
                 while (Console.In.Peek() != '\n') Console.In.Read();
             }
@@ -46,20 +47,20 @@ namespace DBMod
             {
                 MelonLogger.Error(ex.ToString());
 
-                PrintWarningMessage();
+                PrintWarnMsg();
 
                 while (Console.In.Peek() != '\n') Console.In.Read();
             }
 
             try
             {
-                var harmony = HarmonyInstance.Create(Guid.NewGuid().ToString());
+                var harmony = new HarmonyLib.Harmony(Guid.NewGuid().ToString());
                 harmony.Patch(AccessTools.Method(typeof(LoaderIntegrityCheck), nameof(PatchTest)),
                     new HarmonyMethod(typeof(LoaderIntegrityCheck), nameof(ReturnFalse)));
 
                 PatchTest();
 
-                PrintWarningMessage();
+                PrintWarnMsg();
 
                 while (Console.In.Peek() != '\n') Console.In.Read();
             }
@@ -75,7 +76,7 @@ namespace DBMod
             throw new BadImageFormatException();
         }
 
-        private static void PrintWarningMessage()
+        private static void PrintWarnMsg()
         {
             MelonLogger.Error("===================================================================");
             MelonLogger.Error("You're using MelonLoader with important security features missing.");
