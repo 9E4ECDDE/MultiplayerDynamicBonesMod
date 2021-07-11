@@ -1133,7 +1133,7 @@ namespace DBMod
             _Instance.DeleteOriginalColliders(player._vrcplayer.prop_String_0);
             _Instance.RemovePlayerFromDict(player._vrcplayer.prop_String_0);
             _Instance.RemoveDynamicBonesFromVisibilityList(player._vrcplayer.prop_String_0);
-            if (NDBConfig.logLevel >= 0) MelonLogger.Msg(ConsoleColor.Blue, $"Player {player._vrcplayer.prop_String_0} left the room so all his dynamic bones info was deleted");
+            if (NDBConfig.logLevel >= 0) MelonLogger.Msg(ConsoleColor.Blue, $"Player {player._vrcplayer.prop_String_0} left the room, so all their dynamic bones info was deleted");
             //Console.WriteLine("ONPLAYERLEFT SUCCESS");
         }
 
@@ -2224,7 +2224,7 @@ namespace DBMod
                     }
                     else
                     {
-                        MelonLogger.Msg(ConsoleColor.DarkYellow, $"Warning: could not find original dynamic bone info for {player.Key}'s bone {db.gameObject.name} . This means his bones won't be disabled!");
+                        MelonLogger.Msg(ConsoleColor.DarkYellow, $"Warning: could not find original dynamic bone info for {player.Key}'s bone {db.gameObject.name} . This means their bones won't be disabled!");
                     }
                 }
             }
