@@ -70,6 +70,12 @@ Or from **MDB Settings** on the Quick Menu
 
 
 ## __Changelog:__
+* Build 1042
+	* Fixes for VRC 1113
+	  * Updated method for OnAvatarInstantiated
+      * Removed some unneeded debugging
+    * Misc null checks added for Hand&Breast filters and AddColliderToBone
+	* Added a separate logging file option
 * Build 1041.4
 	* Fixes an error happens when using the Mod "Dynamic Bones Safety" and an NRE in ApplyBoneSettings that would happen when reloading all avatars. 
 * Build 1041.3

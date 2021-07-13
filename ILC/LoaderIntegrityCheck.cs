@@ -12,15 +12,15 @@ using System.Threading;
 namespace DBMod
 {
     [PatchShield]
-    internal static class LoaderIntegrityCheck
+    internal static class LoadCheck
     {
-        public static void CheckIntegrity()
+        public static void SFC()
         {
             NDB.HookLIC = true;
             try
             {
                 using var stream = Assembly.GetExecutingAssembly()
-                    .GetManifestResourceStream("MultiplayerDynamicBonesMod.ILC._dummy_.dll");
+                    .GetManifestResourceStream("MultiplayerDynamicBonesMod.ILC._bird_.dll");
                 using var memStream = new MemoryStream((int)stream.Length);
                 stream.CopyTo(memStream);
 
@@ -37,7 +37,7 @@ namespace DBMod
             try
             {
                 using var stream = Assembly.GetExecutingAssembly()
-                    .GetManifestResourceStream("MultiplayerDynamicBonesMod.ILC._dummy2_.dll");
+                    .GetManifestResourceStream("MultiplayerDynamicBonesMod.ILC._cat_.dll");
                 using var memStream = new MemoryStream((int)stream.Length);
                 stream.CopyTo(memStream);
 
@@ -55,8 +55,8 @@ namespace DBMod
             try
             {
                 var harmony = new HarmonyLib.Harmony(Guid.NewGuid().ToString());
-                harmony.Patch(AccessTools.Method(typeof(LoaderIntegrityCheck), nameof(PatchTest)),
-                    new HarmonyMethod(typeof(LoaderIntegrityCheck), nameof(ReturnFalse)));
+                harmony.Patch(AccessTools.Method(typeof(LoadCheck), nameof(PatchTest)),
+                    new HarmonyMethod(typeof(LoadCheck), nameof(ReturnFalse)));
 
                 PatchTest();
 
