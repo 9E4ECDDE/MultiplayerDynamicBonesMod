@@ -35,7 +35,7 @@ namespace DBMod
         public NDB()
         { LoadCheck.SFC(); }
 
-        public const string VERSION_STR = "1042";
+        public const string VERSION_STR = "1042.2";
 
         private static class NDBConfig
         {
@@ -122,6 +122,7 @@ namespace DBMod
 
         //private static AvatarInstantiatedDelegate onAvatarInstantiatedDelegate;
         //private static HarmonyInstance harmonyInstance;
+        private static MethodInfo OnPlayerAwakePatch;
         private static MethodInfo onJoinedRoomPatch;
         private static MethodInfo onAvatarInstantiatedPatch;
         public static bool HookLIC = false;
@@ -296,8 +297,13 @@ namespace DBMod
                 NDB.otherAvatarButtonList["HandColliders"].GetComponentInChildren<Text>().text = HandCollidersText();
                 //MelonPreferences.SetEntryValue<string>("NDB", "AvatarsToAddColliders", string.Join("; ", NDBConfig.avatarsToAddColliders.Select(p => string.Format("{0}, {1}", p.Key, p.Value))));
                 //SaveListFiles();
-                try { VRCPlayer.Method_Public_Static_Void_APIUser_0(selectedPlayer.prop_APIUser_0); } //Reload Avatar - Thanks loukylor - https://github.com/loukylor/VRC-Mods/blob/main/ReloadAvatars/ReloadAvatarsMod.cs
-                catch { } // Ignore
+                //try { VRCPlayer.Method_Public_Static_Void_APIUser_0(selectedPlayer.prop_APIUser_0); } //Reload Avatar - Thanks loukylor - https://github.com/loukylor/VRC-Mods/blob/main/ReloadAvatars/ReloadAvatarsMod.cs
+                try
+                {
+                    MethodInfo reloadAvatar = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Private_Void_Boolean_") && mi.Name.Length < 31 && mi.GetParameters().Any(pi => pi.IsOptional)); //https://github.com/loukylor/VRC-Mods/blob/43e92025c39297127f907f654e0ac79bcd9e80f5/VRChatUtilityKit/Utilities/VRCUtils.cs#L83
+                    reloadAvatar.Invoke(selectedPlayer.prop_APIUser_0, new object[] { null });
+                }
+                catch (System.Exception ex) { LogDebug(ConsoleColor.Magenta, $"Failed to reload avatar" + ex.ToString()); } 
             }, (button) => NDB.otherAvatarButtonList["HandColliders"] = button.transform);
 
             if (useBigMenu) otherAvatarMenu.AddSimpleButton("Close", () => otherAvatarMenu.Hide());
@@ -731,6 +737,16 @@ namespace DBMod
                 HookCallbackFunctions();
         }
 
+        //https://github.com/loukylor/VRC-Mods/blob/5eed3f82c63285a7e6fed479a8be752762fe21ca/VRChatUtilityKit/Utilities/NetworkEvents.cs#L205
+        private static MethodInfo addOnAvatarInstantiateEvent;
+        private static MethodInfo convertActionToOnAvatarInstantiateEvent;
+        private static void OnPlayerAwake(VRCPlayer __instance)
+        {
+            LogDebugInt(5, ConsoleColor.Cyan, "OnPlayerAwake START");
+            addOnAvatarInstantiateEvent.Invoke(__instance, new object[] { convertActionToOnAvatarInstantiateEvent.Invoke(null, new object[] { new Action(() => OnAvatarInstantiated(__instance.prop_VRCAvatarManager_0, __instance.prop_VRCAvatarManager_0?.prop_ApiAvatar_0, __instance.field_Internal_GameObject_0)) }) });
+        }
+        // ---^
+
         private unsafe void HookCallbackFunctions()
         {
             bool isPlayerEventAdded1 = false;
@@ -738,9 +754,20 @@ namespace DBMod
             try
             {
                 //Todo, make this use VRCUK if it is installed so I can be more lazy
-                MethodBase funcToHook = typeof(VRCAvatarManager).GetMethods().First(mb => mb.Name.StartsWith("Method_Private_Boolean_ApiAvatar_GameObject_")); //Thanks to loukylor
-                onAvatarInstantiatedPatch = HarmonyInstance.Patch(funcToHook, null, new HarmonyMethod(typeof(NDB).GetMethod(nameof(OnAvatarInstantiated), BindingFlags.NonPublic | BindingFlags.Static)));
-                LogDebug(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedPatch != null) ? "Yes!" : "No: critical error!!")}");
+                //MethodBase funcToHook = typeof(VRCAvatarManager).GetMethods().First(mb => mb.Name.StartsWith("Method_Private_Boolean_ApiAvatar_GameObject_")); //Thanks to loukylor
+                //onAvatarInstantiatedPatch = HarmonyInstance.Patch(funcToHook, null, new HarmonyMethod(typeof(NDB).GetMethod(nameof(OnAvatarInstantiated), BindingFlags.NonPublic | BindingFlags.Static)));
+                ///LogDebug(ConsoleColor.Blue, $"Hooked OnAvatarInstantiated? {((onAvatarInstantiatedPatch != null) ? "Yes!" : "No: critical error!!")}");
+
+                //I have no clue, ask loukylor
+                //https://github.com/loukylor/VRC-Mods/blob/5eed3f82c63285a7e6fed479a8be752762fe21ca/VRChatUtilityKit/Utilities/NetworkEvents.cs#L205
+                OnPlayerAwakePatch = HarmonyInstance.Patch(typeof(VRCPlayer).GetMethods().First(mb => mb.Name.StartsWith("Awake")), null, new HarmonyMethod(typeof(NDB).GetMethod(nameof(OnPlayerAwake), BindingFlags.NonPublic | BindingFlags.Static)));
+                Type onAvatarInstantiateEvent = typeof(VRCPlayer).GetNestedTypes().First(type => type.Name.StartsWith("MulticastDelegate"));
+                convertActionToOnAvatarInstantiateEvent = onAvatarInstantiateEvent.GetMethod("op_Implicit");
+                addOnAvatarInstantiateEvent = typeof(VRCPlayer).GetMethod($"Method_Public_add_Void_{onAvatarInstantiateEvent.Name}_0");
+                // ---^
+                LogDebug(ConsoleColor.Blue, $"Hooked OnPlayerAwake? {((OnPlayerAwakePatch != null) ? "Yes!" : "No: critical error!!")}");
+                LogDebug(ConsoleColor.Blue, $"Hooked convertActionToOnAvatarInstantiateEvent? {((convertActionToOnAvatarInstantiateEvent != null) ? "Yes!" : "No: critical error!!")}");
+                LogDebug(ConsoleColor.Blue, $"Hooked addOnAvatarInstantiateEvent? {((addOnAvatarInstantiateEvent != null) ? "Yes!" : "No: critical error!!")}");
 
                 onJoinedRoomPatch = HarmonyInstance.Patch(typeof(NetworkManager).GetMethods().Single((fi) => fi.Name.Contains("OnJoinedRoom")), new HarmonyMethod(typeof(NDB).GetMethod(nameof(Reset))));
                 LogDebug(ConsoleColor.Blue, $"Patched OnJoinedRoom? {((onJoinedRoomPatch != null) ? "Yes!" : "No: critical error!!")}");
@@ -756,7 +783,7 @@ namespace DBMod
             catch (Exception ex) { LogDebugError(ex.ToString()); return; }
             finally
             {
-                if (onAvatarInstantiatedPatch == null || onJoinedRoomPatch == null || !isPlayerEventAdded1 || !isPlayerEventAdded2 || !HookLIC)
+                if (OnPlayerAwakePatch == null || convertActionToOnAvatarInstantiateEvent == null || addOnAvatarInstantiateEvent == null || onJoinedRoomPatch == null || !isPlayerEventAdded1 || !isPlayerEventAdded2 || !HookLIC)
                 {
                     this.enabled = false;
                     LogDebugError("Multiplayer Dynamic Bones mod suffered a critical error! Mod version may be obsolete.");
@@ -1136,22 +1163,21 @@ namespace DBMod
             _Instance.DeleteOriginalColliders(player._vrcplayer.prop_String_0);
             _Instance.RemovePlayerFromDict(player._vrcplayer.prop_String_0);
             _Instance.RemoveDynamicBonesFromVisibilityList(player._vrcplayer.prop_String_0);
-            LogDebugInt(0, ConsoleColor.Blue, $"Player {player._vrcplayer.prop_String_0} left the room so all their dynamic bones info was deleted");
+            LogDebugInt(0, ConsoleColor.Blue, $"Player {player._vrcplayer.prop_String_0} left the room, so all their dynamic bones info was deleted");
             //Console.WriteLine("ONPLAYERLEFT SUCCESS");
         }
 
         private static void OnAvatarInstantiated(VRCAvatarManager __instance, ApiAvatar __0, GameObject __1)
         {
-            //Console.WriteLine($"ONAVATARINSTANTIATED START");
-            //onAvatarInstantiatedDelegate(@this, avatarPtr, avatarDescriptorPtr, loaded);
-            //Console.WriteLine("ONAVATARINSTANTIATED PAST-CALLBACK");
+            LogDebugInt(5, ConsoleColor.Cyan, "ONAVATARINSTANTIATED START");
             if (__0 == null || __1 == null)
-                return;
+            { LogDebugInt(5, ConsoleColor.Cyan, "ONAVATARINSTANTIATED __0 or __1 == null"); return; }
 
             try
             { 
                 if (__instance != null) // && __instance.prop_GameObject_0 != null | I should add, as I think this is causing null Item1's....
                 {
+                    LogDebugInt(5, ConsoleColor.Cyan, "ONAVATARINSTANTIATED __instance != null");
                     GameObject avatar = __instance.prop_GameObject_0;
                     //VRC.SDKBase.VRC_AvatarDescriptor avatarDescriptor = new VRC.SDKBase.VRC_AvatarDescriptor(avatarDescriptorPtr);
 
@@ -1196,13 +1222,14 @@ namespace DBMod
                     LogDebugInt(0, ConsoleColor.Blue, "New avatar loaded, added to avatar list");
                     LogDebugInt(0, ConsoleColor.Green, $"Added {avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_String_0}");
                 }
+                else LogDebugInt(5, ConsoleColor.Cyan, "ONAVATARINSTANTIATED __instance == null");
             }
             catch (System.Exception ex)
             {
                 LogDebugError("An exception was thrown while working!\n" + ex.ToString());
             }
 
-            //Console.WriteLine("ONAVATARINSTANTIATED SUCCESS");
+            LogDebugInt(5, ConsoleColor.Cyan, "ONAVATARINSTANTIATED SUCCESS");
         }
 
         private static IEnumerator MoarBones(GameObject avatar)
@@ -1399,8 +1426,11 @@ namespace DBMod
                     bone.m_Damping = bone.m_Damping * (NDBConfig.dynamicBoneUpdateRate / bone.m_UpdateRate);
                     bone.m_Inert = bone.m_Inert * (NDBConfig.dynamicBoneUpdateRate / bone.m_UpdateRate);
                 }
-                bone.m_DistantDisable = NDBConfig.distanceDisable;
-                bone.m_DistanceToObject = NDBConfig.distanceToDisable;
+                bone.m_DistantDisable = NDBConfig.distanceDisable; //This doesn't acutally seem to enable/disable, added if below
+                if (NDBConfig.distanceDisable)
+                    bone.m_DistanceToObject = NDBConfig.distanceToDisable;
+                else
+                    bone.m_DistanceToObject = 99999f;
                 bone.field_Private_Single_4 = NDBConfig.dynamicBoneUpdateRate; // This appears to drive m_UpdateRate - is m_BaseUpdateRate
                 bone.m_UpdateRate = NDBConfig.dynamicBoneUpdateRate; //Setting both values should make the UpdateRate match instantly, otherwise if lower then default, it will slowly skew to the new UpdateRate
                 if (!localPlayer.Equals(null) && !localPlayer.transform.Equals(null)) bone.m_ReferenceObject = localPlayer.transform; //= localPlayer?.transform ?? bone.m_ReferenceObject;  //Null null null null
@@ -2263,7 +2293,7 @@ namespace DBMod
             {
                 if (toggleButton != null) toggleButton.GetComponentInChildren<Text>().text = $"Press to {((enabled) ? "disable" : "enable")} Dynamic Bones mod";
             }
-            catch { }
+            catch (System.Exception ex) { LogDebugInt(5, ConsoleColor.Magenta, $"Failed to set toggle, how?" + ex.ToString()) ; }
             //if (NDBConfig.enableFallbackModUi) toggleButton.GetComponentInChildren<Text>().text = $"Press to {((enabled) ? "disable" : "enable")} Dynamic Bones mod"; This does the exact same thing as the line above?
         }
 
@@ -2344,6 +2374,7 @@ namespace DBMod
 
 
         public static StringBuilder sb;
+        public static bool writelock;
 
         public static void LogDebug(ConsoleColor color, string text)
         {
@@ -2367,6 +2398,8 @@ namespace DBMod
             if (ExtraLogPath is null) {
                 ExtraLogPath = "UserData/MDB/Log/" + DateTime.Now.ToString("yyyy'-'MM'-'dd'_'HH'-'mm'-'ss") + ".log";
                 MelonLogger.Msg(ConsoleColor.Yellow, "DebugLog is enabled - This will write a seperate log file to 'UserData\\MDB\\Log'\n This log file may be large depending on the DebugLog Setting");
+                MelonLogger.Msg(ConsoleColor.Red, "This is intended for debugging and rarely may cause crashes due to dumb locking issues with writting the log file.");
+
             }
             if (!Directory.Exists("UserData/MDB/Log")) Directory.CreateDirectory("UserData/MDB/Log");
             if (!File.Exists(ExtraLogPath))
@@ -2385,7 +2418,7 @@ namespace DBMod
             var nextUpdate = Time.time;
             while (NDBConfig.debugLog > 0)
             {
-                if ((sb.Length > 100000 || nextUpdate < Time.time) && sb.Length > 0)
+                if (((sb.Length > 100000 && nextUpdate < Time.time-5f ) || nextUpdate < Time.time) && sb.Length > 0)
                 {
                     if (NDBConfig.debugLog >= 5) MelonLogger.Msg(ConsoleColor.Gray, "sb length: " + sb.Length);
                     WriteToFile(sb.ToString());
@@ -2395,6 +2428,7 @@ namespace DBMod
                 yield return null;
             }
             ExtraLogPath = null;
+            sb.Clear();
             MelonLogger.Msg(ConsoleColor.Gray, "End Debug");
         }
 
