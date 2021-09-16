@@ -1,5 +1,3 @@
-
-
 ## MultiplayerDynamicBonesMod
 
 Makes dynamic bones multiplayer, allowing other players to interact with yours and vice versa, in addition to optimizing dynamic bones and more.
@@ -70,6 +68,13 @@ Or from **MDB Settings** on the Quick Menu
 
 
 ## __Changelog:__
+* Build 1042.2
+	* Fixes for VRC 1132
+		* Updated methods for OnAvatarInstantiated, Reloading avatars after toggling Hand Colliders, Reloading all avatars after toggling Moar Bones.
+	*  Changed the behavior of DistantDisable - This is now "Use **custom** value for disabling bones if beyond a distance"
+		* This previous caused issues if the user disabled the option while bones were disabled for being a certain distance away. However it turns out this feature works differently than expected. 
+			*   The default behavior is m_distanceToDisable = 10 m_distantDisable = True, but m_ReferenceObject = null. The DB docs say with a null refObj it will use the main camera instead. In my testing with MDB uninstalled this is correct, VRC natively disables distant (10m) away bones. We are switching to where m_DistantDisable is always true and we just change the value. This way when DistantDisable is true, we can use the user's value, be it smaller or larger, and when false, the native 10m.
+		
 * Build 1042
 	* Fixes for VRC 1113
 	  * Updated method for OnAvatarInstantiated

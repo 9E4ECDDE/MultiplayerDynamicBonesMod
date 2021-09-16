@@ -301,9 +301,9 @@ namespace DBMod
                 try
                 {
                     MethodInfo reloadAvatar = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Private_Void_Boolean_") && mi.Name.Length < 31 && mi.GetParameters().Any(pi => pi.IsOptional)); //https://github.com/loukylor/VRC-Mods/blob/43e92025c39297127f907f654e0ac79bcd9e80f5/VRChatUtilityKit/Utilities/VRCUtils.cs#L83
-                    reloadAvatar.Invoke(selectedPlayer.prop_APIUser_0, new object[] { null });
+                    reloadAvatar.Invoke(selectedPlayer.prop_VRCPlayer_0, new object[] { true });
                 }
-                catch (System.Exception ex) { LogDebug(ConsoleColor.Magenta, $"Failed to reload avatar" + ex.ToString()); } 
+                catch (System.Exception ex) { LogDebug(ConsoleColor.Magenta, $"Failed to reload avatar " + ex.ToString()); } 
             }, (button) => NDB.otherAvatarButtonList["HandColliders"] = button.transform);
 
             if (useBigMenu) otherAvatarMenu.AddSimpleButton("Close", () => otherAvatarMenu.Hide());
@@ -399,7 +399,7 @@ namespace DBMod
                                   {"DisallowDesktoppers", "Desktopers's colliders and bones won't be multiplayer'd"},
                                   {"OnlyDynamicBonesOnBreasts", "Only the breast bones will be multiplayer'd\n"},//End Row 3
                                   {"EnableJustIfVisible", "Enable dynamic bones only if they are in view"},
-                                  {"DistanceDisable", "Disable bones if beyond a distance"},
+                                  {"DistanceDisable", "Use custom value for disabling bones if beyond a distance"},
                                   {"MoarBones", "~MoarBones~"}};//End Row 4
 
             for (int i = 0; i < settings.GetLength(0); i++)
@@ -680,7 +680,7 @@ namespace DBMod
             MelonPreferences.CreateEntry<bool>("NDB", "IncludeSpecificBones", true, "Include Specific Bones or Colliders to be Multiplayered[QM]");
 
             //Bone settings
-            MelonPreferences.CreateEntry<bool>("NDB", "DistanceDisable", true, "Disable bones if beyond a distance [QM]");
+            MelonPreferences.CreateEntry<bool>("NDB", "DistanceDisable", true, "Custom value for disabling bones if beyond a distance[QM]");
             MelonPreferences.CreateEntry<float>("NDB", "DistanceToDisable", 4f, "Distance limit");
             MelonPreferences.CreateEntry<bool>("NDB", "DisallowInsideColliders", true, "Disallow inside colliders from being multiplayered (Default Enabled) [QM]");
             MelonPreferences.CreateEntry<bool>("NDB", "DestroyInsideColliders", false, "Destroy inside colliders (Requires reload of avatar) [QM]");
@@ -742,7 +742,7 @@ namespace DBMod
         private static MethodInfo convertActionToOnAvatarInstantiateEvent;
         private static void OnPlayerAwake(VRCPlayer __instance)
         {
-            LogDebugInt(5, ConsoleColor.Cyan, "OnPlayerAwake START");
+            LogDebugInt(5, ConsoleColor.DarkCyan, "OnPlayerAwake START");
             addOnAvatarInstantiateEvent.Invoke(__instance, new object[] { convertActionToOnAvatarInstantiateEvent.Invoke(null, new object[] { new Action(() => OnAvatarInstantiated(__instance.prop_VRCAvatarManager_0, __instance.prop_VRCAvatarManager_0?.prop_ApiAvatar_0, __instance.field_Internal_GameObject_0)) }) });
         }
         // ---^
@@ -865,9 +865,8 @@ namespace DBMod
                 moarbonesCount = 0;
                 try
                 {   // Reload All Avatar - Thanks loukylor - https://github.com/loukylor/VRC-Mods/blob/main/ReloadAvatars/ReloadAvatarsMod.cs
-                    MethodInfo reloadAllAvatarsMethod = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Public_Void_Boolean_") && mi.Name.Length < 30 && mi.GetParameters().All(pi => pi.HasDefaultValue ));// Both methods seem to do the same thing
-                    reloadAllAvatarsMethod.Invoke(VRCPlayer.field_Internal_Static_VRCPlayer_0, new object[] { null });
-                    //VRCPlayer.field_Internal_Static_VRCPlayer_0.Method_Public_Void_Boolean_0(); 
+                    MethodInfo reloadAllAvatarsMethod = typeof(VRCPlayer).GetMethods().First(mi => mi.Name.StartsWith("Method_Public_Void_Boolean_") && mi.Name.Length < 30 && mi.GetParameters().All(pi => pi.IsOptional) && Xref.CheckUsedBy(mi, "Method_Public_Void_", typeof(FeaturePermissionManager)));// Both methods seem to do the same thing;
+                    reloadAllAvatarsMethod.Invoke(VRCPlayer.field_Internal_Static_VRCPlayer_0, new object[] { true });
                 }
                 catch { LogDebugError("Failed to reload all avatars - You will have to rejoin the world - Check for a newer version of this mod or report this bug"); } // Ignore
             }
@@ -1169,15 +1168,15 @@ namespace DBMod
 
         private static void OnAvatarInstantiated(VRCAvatarManager __instance, ApiAvatar __0, GameObject __1)
         {
-            LogDebugInt(5, ConsoleColor.Cyan, "ONAVATARINSTANTIATED START");
-            if (__0 == null || __1 == null)
-            { LogDebugInt(5, ConsoleColor.Cyan, "ONAVATARINSTANTIATED __0 or __1 == null"); return; }
+            LogDebugInt(5, ConsoleColor.DarkCyan, "ONAVATARINSTANTIATED START");
+            if (__0 == null || __1 == null || __instance == null)
+            { LogDebugInt(5, ConsoleColor.DarkCyan, "ONAVATARINSTANTIATED __0 or __1 or __instance == null"); return; }
 
             try
-            { 
-                if (__instance != null) // && __instance.prop_GameObject_0 != null | I should add, as I think this is causing null Item1's....
+            {
+                if (__instance.prop_GameObject_0.GetComponentInChildren<PipelineManager>().blueprintId != "") // && __instance.prop_GameObject_0 != null | I should add, as I think this is causing null Item1's....
                 {
-                    LogDebugInt(5, ConsoleColor.Cyan, "ONAVATARINSTANTIATED __instance != null");
+                    LogDebugInt(5, ConsoleColor.DarkCyan, $"Avatar has Pipeline ID: {(__instance.prop_GameObject_0.GetComponentInChildren<PipelineManager>().blueprintId)}");
                     GameObject avatar = __instance.prop_GameObject_0;
                     //VRC.SDKBase.VRC_AvatarDescriptor avatarDescriptor = new VRC.SDKBase.VRC_AvatarDescriptor(avatarDescriptorPtr);
 
@@ -1222,14 +1221,14 @@ namespace DBMod
                     LogDebugInt(0, ConsoleColor.Blue, "New avatar loaded, added to avatar list");
                     LogDebugInt(0, ConsoleColor.Green, $"Added {avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_String_0}");
                 }
-                else LogDebugInt(5, ConsoleColor.Cyan, "ONAVATARINSTANTIATED __instance == null");
+                else LogDebugInt(5, ConsoleColor.DarkCyan, "ONAVATARINSTANTIATED Avatar PipelineID is null");
             }
             catch (System.Exception ex)
             {
                 LogDebugError("An exception was thrown while working!\n" + ex.ToString());
             }
 
-            LogDebugInt(5, ConsoleColor.Cyan, "ONAVATARINSTANTIATED SUCCESS");
+            LogDebugInt(5, ConsoleColor.DarkCyan, "ONAVATARINSTANTIATED SUCCESS");
         }
 
         private static IEnumerator MoarBones(GameObject avatar)
@@ -1426,14 +1425,27 @@ namespace DBMod
                     bone.m_Damping = bone.m_Damping * (NDBConfig.dynamicBoneUpdateRate / bone.m_UpdateRate);
                     bone.m_Inert = bone.m_Inert * (NDBConfig.dynamicBoneUpdateRate / bone.m_UpdateRate);
                 }
-                bone.m_DistantDisable = NDBConfig.distanceDisable; //This doesn't acutally seem to enable/disable, added if below
-                if (NDBConfig.distanceDisable)
-                    bone.m_DistanceToObject = NDBConfig.distanceToDisable;
-                else
-                    bone.m_DistanceToObject = 99999f;
+
+                //bone.m_DistantDisable = NDBConfig.distanceDisable;
+                //bone.m_DistanceToObject = NDBConfig.distanceToDisable;
+                //So the way this seems to work, if m_DistantDisable = true, then we use the m_DistanceToObject to enable/disable bones
+                //However, if the bone is disabled, and we switch m_DistantDisable to false, then we stop checking if we are near a bone to renable
+                //and this will cause buggy stuff where bones are just disabled.
+
+                //Default behavior is m_distanceToDisable = 10 m_distantDisable = True, but m_ReferenceObject = null. DB docs say with a null refObj
+                //it will use the main camera instead. In my testing with MDB uninstalled this is correct, VRC natively disables distant (10m) away bones. 
+
+                //Switching to the option below where m_DistantDisable is always true and we just change the value. This way when DistantDisable is true, 
+                //we can use the user's value, be it smaller or larger. 
+
+                bone.m_DistantDisable = true;
+                  if (NDBConfig.distanceDisable)
+                     bone.m_DistanceToObject = NDBConfig.distanceToDisable;
+                 else
+                     bone.m_DistanceToObject = 10f;
                 bone.field_Private_Single_4 = NDBConfig.dynamicBoneUpdateRate; // This appears to drive m_UpdateRate - is m_BaseUpdateRate
                 bone.m_UpdateRate = NDBConfig.dynamicBoneUpdateRate; //Setting both values should make the UpdateRate match instantly, otherwise if lower then default, it will slowly skew to the new UpdateRate
-                if (!localPlayer.Equals(null) && !localPlayer.transform.Equals(null)) bone.m_ReferenceObject = localPlayer.transform; //= localPlayer?.transform ?? bone.m_ReferenceObject;  //Null null null null
+                //if (!localPlayer.Equals(null) && !localPlayer.transform.Equals(null)) bone.m_ReferenceObject = localPlayer.transform; //= localPlayer?.transform ?? bone.m_ReferenceObject;  //Not needed "If there is no reference object, default main camera is used."
                 if (!NDBConfig.onlyOptimize) ApplyDBRadius(bone, avatarHash); //Dont adjust radius if we aren't multiplayering 
                 ApplyBoneChanges(bone);
             }
@@ -2320,6 +2332,7 @@ namespace DBMod
             {
                 bones.Select((bone) =>
                 {
+                    LogDebugInt(5, ConsoleColor.Yellow, $"{(bone?.name != null ? bone.name : "")} = distanceToDisable = {bone.m_DistanceToObject}, updateRate = {bone.m_UpdateRate}, distantDisable = {bone.m_DistantDisable}, colliders = , m_ReferenceObject = {(bone?.m_ReferenceObject?.name != null ? bone.m_ReferenceObject.name : "")}, Elasticity = {bone.m_Elasticity}, Stiffness = {bone.m_Stiffness}, Damping = {bone.m_Damping}, Inert = {bone.m_Inert}, Radius = {bone.m_Radius}, Enabled = {bone.enabled}");
                     return new OriginalBoneInformation() { distanceToDisable = bone.m_DistanceToObject, updateRate = bone.m_UpdateRate, distantDisable = bone.m_DistantDisable, colliders = new List<DynamicBoneCollider>(bone.m_Colliders.ToArrayExtension()), referenceToOriginal = bone, Elasticity = bone.m_Elasticity, Stiffness = bone.m_Stiffness, Damping = bone.m_Damping, Inert = bone.m_Inert, Radius = bone.m_Radius, Enabled = bone.enabled };
                 }).Do((info) => ogInfo.Add(info));
             }

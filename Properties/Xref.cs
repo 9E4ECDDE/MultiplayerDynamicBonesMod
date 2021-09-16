@@ -44,5 +44,25 @@ namespace DBMod
                     }
             return false;
         }
+
+        public static bool CheckUsedBy(MethodInfo method, string methodName, Type type = null)
+        {
+            foreach (XrefInstance instance in XrefScanner.UsedBy(method))
+            {
+                if (instance.Type == XrefType.Method)
+                {
+                    try
+                    {
+                        if ((type == null || instance.TryResolve().DeclaringType == type) && instance.TryResolve().Name.Contains(methodName))
+                            return true;
+                    }
+                    catch
+                    {
+
+                    }
+                }
+            }
+            return false;
+        }
     }
 }
