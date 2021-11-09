@@ -70,7 +70,7 @@ Or from **MDB Settings** on the Quick Menu
 
 ## __Changelog:__
 
-* Build 1042.2
+* Build 1043
 	* Fixes for VRC 1149
 	  * Changed around hooks and variables, resized menus to fit new UIX constraints
 	* For settings changes that only affect one user, the mod now only unloads and reloads their bones, instead of everyone's
