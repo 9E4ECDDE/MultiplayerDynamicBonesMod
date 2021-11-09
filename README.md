@@ -69,6 +69,16 @@ Or from **MDB Settings** on the Quick Menu
 
 
 ## __Changelog:__
+
+* Build 1042.2
+	* Fixes for VRC 1149
+	  * Changed around hooks and variables, resized menus to fit new UIX constraints
+	* For settings changes that only affect one user, the mod now only unloads and reloads their bones, instead of everyone's
+	* Optimized checks in loops, should be somewhat faster now when adding players
+	* Fixed a bug in AutoAddHandColliders where it would fail if the fingers weren't the first children of the hands
+	* Added an option to 'Visualize' avatar's DBs and DBCs, this is in the MDB menu when you select someone
+	* Added an option for resetting 'DisableAllBones' to false on world change
+	* Removed 'DisallowInsideColliders' from the MDB Quick Settings menu, that setting should always be enabled
 * Build 1042.2
 	* Fixes for VRC 1132
 		* Updated methods for OnAvatarInstantiated, Reloading avatars after toggling Hand Colliders, Reloading all avatars after toggling Moar Bones.
