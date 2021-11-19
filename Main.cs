@@ -36,7 +36,7 @@ namespace DBMod
         public NDB()
         { LoadCheck.SFC(); }
 
-        public const string VERSION_STR = "1043";
+        public const string VERSION_STR = "1043.1";
 
         private static class NDBConfig
         {
@@ -251,7 +251,7 @@ namespace DBMod
                 else NDBConfig.avatarsToWhichNotApply.Add(avatarHash, true); //Change to Enable
 
                 NDB.otherAvatarButtonList["SpecificAvatar"].GetComponentInChildren<Text>().text = AvatarExcludeText();
-                if (enabled) ResetDBandDBCforOneUser(selectedPlayer._vrcplayer.prop_String_1);
+                if (enabled) ResetDBandDBCforOneUser(selectedPlayer.field_Private_APIUser_0.displayName);
                 //if (enabled) { RestoreOriginalColliderList(); AddAllCollidersToAllPlayers(); }
                 //SaveListFiles();
             }, (button) => NDB.otherAvatarButtonList["SpecificAvatar"] = button.transform);
@@ -309,13 +309,13 @@ namespace DBMod
             otherAvatarMenu.AddLabel("This is an Experimental feature to visualize DB and DBCs on avatars");
             otherAvatarMenu.AddSimpleButton($"VisualizeDBs - Parent", (() =>
             {
-                VisualizeDBs(avatarsInScene[selectedPlayer._vrcplayer.prop_String_1].Item3, true);
-                VisualizeDBCs(avatarsInScene[selectedPlayer._vrcplayer.prop_String_1].Item4, true);
+                VisualizeDBs(avatarsInScene[selectedPlayer.field_Private_APIUser_0.displayName].Item3, true);
+                VisualizeDBCs(avatarsInScene[selectedPlayer.field_Private_APIUser_0.displayName].Item4, true);
             }));
             otherAvatarMenu.AddSimpleButton($"VisualizeDBs", (() =>
             {
-                VisualizeDBs(avatarsInScene[selectedPlayer._vrcplayer.prop_String_1].Item3, false);
-                VisualizeDBCs(avatarsInScene[selectedPlayer._vrcplayer.prop_String_1].Item4, false);
+                VisualizeDBs(avatarsInScene[selectedPlayer.field_Private_APIUser_0.displayName].Item3, false);
+                VisualizeDBCs(avatarsInScene[selectedPlayer.field_Private_APIUser_0.displayName].Item4, false);
             }));
             otherAvatarMenu.AddSimpleButton($"Cleanup Visualize Objects", (() =>
             {
@@ -344,7 +344,7 @@ namespace DBMod
                 NDB.otherAvatarButtonList["Current"].GetComponentInChildren<Text>().text = CurrentText();
                 //SaveListFiles();
                 //if (enabled) { RestoreOriginalColliderList(); AddAllCollidersToAllPlayers(); }
-                if (enabled) ResetDBandDBCforOneUser(selectedPlayer._vrcplayer.prop_String_1);
+                if (enabled) ResetDBandDBCforOneUser(selectedPlayer.field_Private_APIUser_0.displayName);
             }
 
             mrrMenu.AddSimpleButton($"Multiplier+", (() =>
@@ -482,7 +482,7 @@ namespace DBMod
         {
             if (selectedPlayer is null) return;
             NDB.specificButtonList.Clear(); //Clear list of buttons
-            DynamicBone[] boneList = avatarsInScene[selectedPlayer._vrcplayer.prop_String_1].Item3;
+            DynamicBone[] boneList = avatarsInScene[selectedPlayer.field_Private_APIUser_0.displayName].Item3;
             ICustomShowableLayoutedMenu boneSpecificMenu = null;
             boneSpecificMenu = useBigMenu ? ExpansionKitApi.CreateCustomFullMenuPopup(LayoutDescription.WideSlimList) : ExpansionKitApi.CreateCustomQuickMenuPage(LayoutDescriptionCustom.QuickMenu1Column);
             //string playerName = selectedPlayer.field_Private_APIUser_0.displayName;
@@ -512,7 +512,7 @@ namespace DBMod
             {
                 if (enabled) //This is lazy
                 //{ RestoreOriginalColliderList(); AddAllCollidersToAllPlayers(); }
-                { ResetDBandDBCforOneUser(selectedPlayer._vrcplayer.prop_String_1); }
+                { ResetDBandDBCforOneUser(selectedPlayer.field_Private_APIUser_0.displayName); }
                 else ToggleState();
             });
             boneSpecificMenu.AddSimpleButton("Debug: Print excluded to console", () => PrintBonesSpecific());
@@ -546,7 +546,7 @@ namespace DBMod
         {
             if (selectedPlayer is null) return;
             NDB.specificButtonList.Clear(); //Clear list of buttons
-            DynamicBoneCollider[] boneList = avatarsInScene[selectedPlayer._vrcplayer.prop_String_1].Item4;
+            DynamicBoneCollider[] boneList = avatarsInScene[selectedPlayer.field_Private_APIUser_0.displayName].Item4;
             ICustomShowableLayoutedMenu colliderSpecificMenu = null;
             colliderSpecificMenu = useBigMenu ? ExpansionKitApi.CreateCustomFullMenuPopup(LayoutDescription.WideSlimList) : ExpansionKitApi.CreateCustomQuickMenuPage(LayoutDescriptionCustom.QuickMenu1Column);
             //string playerName = selectedPlayer.field_Private_APIUser_0.displayName;
@@ -575,7 +575,7 @@ namespace DBMod
             {
                 if (enabled) //This is lazy
                 //{ RestoreOriginalColliderList(); AddAllCollidersToAllPlayers(); }
-                { ResetDBandDBCforOneUser(selectedPlayer._vrcplayer.prop_String_1); }
+                { ResetDBandDBCforOneUser(selectedPlayer.field_Private_APIUser_0.displayName); }
                 else ToggleState();
             });
             colliderSpecificMenu.AddSimpleButton("Debug: Print excluded to console", () => PrintBonesSpecific());
@@ -1192,7 +1192,7 @@ namespace DBMod
                 return;
             }
 
-            if (!_Instance.avatarsInScene.ContainsKey(player._vrcplayer.prop_String_1) && !_Instance.originalSettings.ContainsKey(player._vrcplayer.prop_String_1))
+            if (!_Instance.avatarsInScene.ContainsKey(player.field_Private_APIUser_0.displayName) && !_Instance.originalSettings.ContainsKey(player.field_Private_APIUser_0.displayName))
             {
                 LogDebugInt(2, ConsoleColor.Red, $"OnPlayerLeft: Just passing to onPlayerLeftDelegate");
                 //Console.WriteLine("ONPLAYERLEFT PAST-CALLBACK");
@@ -1200,11 +1200,11 @@ namespace DBMod
 
             }
 
-            _Instance.RemoveBonesOfGameObjectInAllPlayers(_Instance.avatarsInScene[player._vrcplayer.prop_String_1].Item4);
-            _Instance.DeleteOriginalColliders(player._vrcplayer.prop_String_1);
-            _Instance.RemovePlayerFromDict(player._vrcplayer.prop_String_1);
-            _Instance.RemoveDynamicBonesFromVisibilityList(player._vrcplayer.prop_String_1);
-            LogDebugInt(0, ConsoleColor.Blue, $"Player {player._vrcplayer.prop_String_1} left the room, so all their dynamic bones info was deleted");
+            _Instance.RemoveBonesOfGameObjectInAllPlayers(_Instance.avatarsInScene[player.field_Private_APIUser_0.displayName].Item4);
+            _Instance.DeleteOriginalColliders(player.field_Private_APIUser_0.displayName);
+            _Instance.RemovePlayerFromDict(player.field_Private_APIUser_0.displayName);
+            _Instance.RemoveDynamicBonesFromVisibilityList(player.field_Private_APIUser_0.displayName);
+            LogDebugInt(0, ConsoleColor.Blue, $"Player {player.field_Private_APIUser_0.displayName} left the room, so all their dynamic bones info was deleted");
             //Console.WriteLine("ONPLAYERLEFT SUCCESS");
         }
 
@@ -1247,7 +1247,7 @@ namespace DBMod
                     LogDebugInt(1, ConsoleColor.Yellow, $"Avatar: {aviName}, ID: {aviID}");
                     AddAutoCollidersToPlayer(avatar, aviHash);
                     _Instance.AddOrReplaceWithCleanup(
-                        avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_String_1, //.prop_String_0 - null now, what was this? 1134-> 'vrcplayer.prop_String_1' - Username, String_2 - usr_ID
+                        avatar.transform.root.GetComponentInChildren<VRCPlayer>()._player.field_Private_APIUser_0.displayName,//.prop_String_0 - null now, what was this? 1134-> 'vrcplayer.prop_String_1' - Username, String_2 - usr_ID
                         new System.Tuple<GameObject, bool, DynamicBone[], DynamicBoneCollider[], bool, System.Tuple<string, string, float>>(
                             avatar,
                             avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_VRCPlayerApi_0.IsUserInVR(),
@@ -1262,7 +1262,7 @@ namespace DBMod
                         ));
 
                     LogDebugInt(0, ConsoleColor.Blue, "New avatar loaded, added to avatar list");
-                    LogDebugInt(0, ConsoleColor.Green, $"Added {avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_String_1}");
+                    LogDebugInt(0, ConsoleColor.Green, $"Added {avatar.transform.root.GetComponentInChildren<VRCPlayer>()._player.field_Private_APIUser_0.displayName}");
                 }
                 else LogDebugInt(5, ConsoleColor.DarkCyan, "ONAVATARINSTANTIATED Avatar PipelineID is null");
             }
@@ -1740,7 +1740,7 @@ namespace DBMod
                     float scale = bone.field_Private_Single_1; // m_ObjectScale 
                     float boneTotalLength = bone.field_Private_Single_0; // m_BoneTotalLength 
                     float orgRad = -1;
-                    string playerKey = bone.transform.root.GetComponentInChildren<VRCPlayer>().prop_String_1;
+                    string playerKey = bone.transform.root.GetComponentInChildren<VRCPlayer>()._player.field_Private_APIUser_0.displayName;
                     _Instance.originalSettings.TryGetValue(playerKey, out List<OriginalBoneInformation> origList);
                     origList.DoIf((x) => ReferenceEquals(x.referenceToOriginal, bone), (origData) =>
                     {
