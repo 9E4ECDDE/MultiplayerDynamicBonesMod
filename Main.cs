@@ -36,7 +36,7 @@ namespace DBMod
         public NDB()
         { LoadCheck.SFC(); }
 
-        public const string VERSION_STR = "1043.1";
+        public const string VERSION_STR = "1043.2";
 
         private static class NDBConfig
         {
@@ -107,6 +107,7 @@ namespace DBMod
         }
 
         private static NDB _Instance;
+        public static MelonLogger.Instance Logger;
 
         public Dictionary<string, System.Tuple<GameObject, bool, DynamicBone[], DynamicBoneCollider[], bool, System.Tuple<string, string, float>>> avatarsInScene;
         private Dictionary<string, List<OriginalBoneInformation>> originalSettings;
@@ -158,6 +159,7 @@ namespace DBMod
 
         public unsafe override void OnApplicationStart()
         {
+            Logger = new MelonLogger.Instance("MultiplayerDynamicBonesMod");
             _Instance = this;
 
             MelonCoroutines.Start(SetupHighlights());
@@ -2186,7 +2188,7 @@ namespace DBMod
                             if (!bone?.Equals(null) ?? false)
                                 leftDistances.Add(Vector3.Distance(lefthand.position, bone.position));
                         }
-                        catch (Exception ex) { MelonLogger.Msg(ConsoleColor.Red, "" + ex.ToString()); }
+                        catch (Exception ex) { LogDebugError("" + ex.ToString()); }
                     }
                     HumanBodyBones[] rhList = { HumanBodyBones.RightThumbProximal, HumanBodyBones.RightIndexProximal, HumanBodyBones.RightMiddleProximal, HumanBodyBones.RightRingProximal, HumanBodyBones.RightLittleProximal };
                     foreach (HumanBodyBones bodybone in rhList)
@@ -2197,7 +2199,7 @@ namespace DBMod
                             if (!bone?.Equals(null) ?? false)
                                 rightDistances.Add(Vector3.Distance(righthand.position, bone.position));
                         }
-                        catch (Exception ex) { MelonLogger.Msg(ConsoleColor.Red, "" + ex.ToString()); }
+                        catch (Exception ex) { LogDebugError("" + ex.ToString()); }
                     }
                     //MelonLogger.Msg($"New - Left:{leftDistances.Average()}, Right{rightDistances.Average()}");
 
@@ -2362,7 +2364,7 @@ namespace DBMod
                     LogDebug(ConsoleColor.Cyan, debug);
                     if(flagAv) LogDebug(ConsoleColor.Red, "Avatar was Null!");
                 }
-                catch (Exception ex) { MelonLogger.Msg(ConsoleColor.Red, "Error in SanityCheck\n" + ex.ToString()); }
+                catch (Exception ex) { LogDebugError("Error in SanityCheck\n" + ex.ToString()); }
             }
         }
 
@@ -2790,17 +2792,17 @@ namespace DBMod
 
         public static void LogDebug(ConsoleColor color, string text)
         {
-            MelonLogger.Msg(color, text);
+            Logger.Msg(color, text);
             if (NDBConfig.debugLog > 0) sb.Append(DateTime.Now.ToString("'['HH':'mm':'ss.fff'] '") + text + Environment.NewLine);
         }
         public static void LogDebugInt(int lvl, ConsoleColor color, string text)
         {
-            if (NDBConfig.logLevel >= lvl) MelonLogger.Msg(color, text);
+            if (NDBConfig.logLevel >= lvl) Logger.Msg(color, text);
             if (NDBConfig.debugLog > 0 && NDBConfig.debugLog >= lvl) sb.Append(DateTime.Now.ToString("'['HH':'mm':'ss.fff'] '") + text + Environment.NewLine);
         }
         public static void LogDebugError(string text)
         {
-            MelonLogger.Error(text);
+            Logger.Error(text);
             if (NDBConfig.debugLog > 0) sb.Append(DateTime.Now.ToString("'['HH':'mm':'ss.fff'] '") + text + Environment.NewLine);
 
         }
@@ -2809,8 +2811,8 @@ namespace DBMod
         {
             if (ExtraLogPath is null) {
                 ExtraLogPath = "UserData/MDB/Log/" + DateTime.Now.ToString("yyyy'-'MM'-'dd'_'HH'-'mm'-'ss") + ".log";
-                MelonLogger.Msg(ConsoleColor.Yellow, "DebugLog is enabled - This will write a seperate log file to 'UserData\\MDB\\Log'\n This log file may be large depending on the DebugLog Setting");
-                MelonLogger.Msg(ConsoleColor.Red, "This is intended for debugging and rarely may cause crashes due to dumb locking issues with writting the log file.");
+                Logger.Msg(ConsoleColor.Yellow, "DebugLog is enabled - This will write a seperate log file to 'UserData\\MDB\\Log'\n This log file may be large depending on the DebugLog Setting");
+                Logger.Msg(ConsoleColor.Red, "This is intended for debugging and rarely may cause crashes due to dumb locking issues with writting the log file.");
 
             }
             if (!Directory.Exists("UserData/MDB/Log")) Directory.CreateDirectory("UserData/MDB/Log");
@@ -2832,7 +2834,7 @@ namespace DBMod
             {
                 if (((sb.Length > 100000 && nextUpdate-5f < Time.time ) || nextUpdate < Time.time) && sb.Length > 0)
                 {
-                    if (NDBConfig.debugLog >= 5) MelonLogger.Msg(ConsoleColor.Gray, "sb length: " + sb.Length);
+                    if (NDBConfig.debugLog >= 5) Logger.Msg(ConsoleColor.Gray, "sb length: " + sb.Length);
                     WriteToFile(sb.ToString());
                     sb.Clear();
                     nextUpdate = Time.time + 10f;
@@ -2841,7 +2843,7 @@ namespace DBMod
             }
             ExtraLogPath = null;
             sb.Clear();
-            MelonLogger.Msg(ConsoleColor.Gray, "End Debug");
+            Logger.Msg(ConsoleColor.Gray, "End Debug");
         }
 
         public async static void WriteToFile(string text)

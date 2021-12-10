@@ -16,7 +16,7 @@ namespace DBMod
         {
             var iuser = GameObject.Find("/UserInterface/Canvas_QuickMenu(Clone)/Container/Window/QMParent/Menu_SelectedUser_Local").GetComponentInChildren<SelectedUserMenuQM>().field_Private_IUser_0;
             var userID = iuser.prop_String_0;
-            foreach (Player player in PlayerManager.Method_Public_Static_ArrayOf_Player_0())
+            foreach (Player player in PlayerManager.prop_PlayerManager_0.prop_ArrayOf_Player_0)
             {
                 if (!player) continue;
                 if (player.prop_APIUser_0.id.Equals(userID)) return player;

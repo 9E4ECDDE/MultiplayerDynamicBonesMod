@@ -69,7 +69,11 @@ Or from **MDB Settings** on the Quick Menu
 
 
 ## __Changelog:__
-
+* Build 1043.2
+	* Updated logging for ML0.5.x
+	* Changed GetSelectedUser to use 'field_Private_List_1_Player_0' as previous method was causing issues
+* Build 1043.2
+	* Fix for VRC 1151, now using a more consistent method for getting player name
 * Build 1043
 	* Fixes for VRC 1149
 	  * Changed around hooks and variables, resized menus to fit new UIX constraints
