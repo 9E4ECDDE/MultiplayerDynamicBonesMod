@@ -215,7 +215,7 @@ OptimizeOnly | false | Optimize bones, don't enable interaction **[QM]** | Optio
 OnlyMe | false | Only I can interact with other bones **[QM]**
 OnlyFriends | false | Only friends and I can interact w/ eachothers bones **[QM]**
 DisallowDesktoppers | false | Desktopers's colliders and bones won't be multiplayer'd **[QM]**
-OnlyHandColliders | false | Only enable colliders in hands **[QM]**
+OnlyHandColliders | true | Only enable colliders in hands **[QM]**
 OnlyDynamicBonesOnBreasts | false | Only the breast bones will be multiplayer'd **[QM]** | 'Breast bones' is defined as anything attached to the chest and not a child of the Left/Right Shoulder or Neck. 
 InteractSelf | false | Add your colliders to your own bones (May cause buggy interactions) **[QM]**
 OthersInteractSelf | false | Add other avatar's colliders to their own bones (May cause buggy interactions) **[QM]**
