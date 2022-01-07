@@ -36,7 +36,7 @@ namespace DBMod
         public NDB()
         { LoadCheck.SFC(); }
 
-        public const string VERSION_STR = "1043.2";
+        public const string VERSION_STR = "1043.3";
 
         private static class NDBConfig
         {
@@ -159,7 +159,7 @@ namespace DBMod
 
         public unsafe override void OnApplicationStart()
         {
-            Logger = new MelonLogger.Instance("MultiplayerDynamicBonesMod");
+            Logger = new MelonLogger.Instance("MultiplayerDynamicBonesMod", ConsoleColor.DarkCyan);
             _Instance = this;
 
             MelonCoroutines.Start(SetupHighlights());
@@ -1243,8 +1243,8 @@ namespace DBMod
                         scaleArmature = ((armature.transform.localScale.x + armature.transform.localScale.y + armature.transform.localScale.z) / 3);
                     }
                     else LogDebugInt(1, ConsoleColor.Yellow, $"Armature not found for scale");
-                    string aviName = avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_ApiAvatar_0.name;
-                    string aviID = avatar.transform.root.GetComponentInChildren<VRCPlayer>().prop_ApiAvatar_0.id;
+                    string aviName = avatar.transform.root.GetComponentInChildren<VRCPlayer>().field_Private_ApiAvatar_0.name; //.prop_ApiAvatar_0.name is getting quest avatar info??
+                    string aviID = avatar.transform.root.GetComponentInChildren<VRCPlayer>().field_Private_ApiAvatar_0.id;
                     string aviHash = aviName.Substring(0, Math.Min(aviName.Length, 20)) + ":" + String.Format("{0:X}", aviID.GetHashCode()).Substring(4);
                     LogDebugInt(1, ConsoleColor.Yellow, $"Avatar: {aviName}, ID: {aviID}");
                     AddAutoCollidersToPlayer(avatar, aviHash);
@@ -2515,7 +2515,7 @@ namespace DBMod
             try
             {
                 //MelonLogger.Msg(ConsoleColor.DarkBlue, "Started drawing editor UI");
-                GUILayout.Label($"Avatar: {localPlayer.GetComponentInChildren<VRCPlayer>()?.prop_VRCAvatarManager_0?.prop_ApiAvatar_0?.name ?? ("error fetching avatar name")}", new GUIStyle() { fontSize = 18 }, new Il2CppReferenceArray<GUILayoutOption>(0));
+                GUILayout.Label($"Avatar: {localPlayer.GetComponentInChildren<VRCPlayer>()?.field_Private_ApiAvatar_0?.name ?? ("error fetching avatar name")}", new GUIStyle() { fontSize = 18 }, new Il2CppReferenceArray<GUILayoutOption>(0));
                 scrollPosition = GUILayout.BeginScrollView(scrollPosition, new GUILayoutOption[] { GUILayout.Width(400), GUILayout.Height(600) });
                 foreach (DynamicBone db in localPlayer.GetComponentsInChildren<DynamicBone>(true))
                 {
