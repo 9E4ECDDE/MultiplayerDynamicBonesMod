@@ -690,7 +690,7 @@ namespace DBMod
             MelonPreferences.CreateEntry<bool>("NDB", "OnlyMe", false, "Only I can interact with other bones [QM]");
             MelonPreferences.CreateEntry<bool>("NDB", "OnlyFriends", false, "Only friends and I can interact w/ eachothers bones [QM]");
             MelonPreferences.CreateEntry<bool>("NDB", "DisallowDesktoppers", false, "Desktopers's colliders and bones won't be multiplayer'd [QM]");
-            MelonPreferences.CreateEntry<bool>("NDB", "OnlyHandColliders", false, "Only enable colliders in hands [QM]");
+            MelonPreferences.CreateEntry<bool>("NDB", "OnlyHandColliders", true, "Only enable colliders in hands [QM]");
             MelonPreferences.CreateEntry<bool>("NDB", "OnlyDynamicBonesOnBreasts", false, "Only the breast bones will be multiplayer'd [QM]");
 
             MelonPreferences.CreateEntry<bool>("NDB", "InteractSelf", false, "Add your colliders to your own bones (May cause buggy interactions) [QM]");
