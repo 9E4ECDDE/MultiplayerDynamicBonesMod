@@ -69,6 +69,9 @@ Or from **MDB Settings** on the Quick Menu
 
 
 ## __Changelog:__
+* Build 1043.3
+	* Changed default to only Multiplayer hand coliders 
+	* Fixed Exclude/Include Specific not working
 * Build 1043.2
 	* Updated logging for ML0.5.x
 	* Changed GetSelectedUser to use 'field_Private_List_1_Player_0' as previous method was causing issues
